@@ -1,0 +1,13 @@
+/build
+/bin
+/.gradle
+/.idea
+/run
+*.jar
+*.nest
+
+# eclipse
+.eclipse
+.classpath
+.project
+.settings/
