@@ -1,0 +1,36 @@
+name: Publish
+on:
+  push:
+    branches:
+      - 'dev/**' 
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: gradle/wrapper-validation-action@v1
+
+      # Generate the build number based on tags to allow per branch build numbers, not something github provides by default.
+      - name: Generate build number
+        id: buildnumber
+        uses: einaregilsson/build-number@v3
+        with:
+          token: ${{ secrets.github_token }}
+          prefix: ${{ github.ref }}
+      - run: git config --global user.email "nobody@example.com"
+      - run: git config --global user.name "Nobody"
+      - name: setup jdk
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - run: ./gradlew build publish --stacktrace
+        env:
+          MAVEN_URL: ${{ secrets.NEW_MAVEN_URL }}
+          MAVEN_USERNAME: ${{ secrets.NEW_MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.NEW_MAVEN_PASSWORD }}
+          SNAPSHOTS_URL: ${{ secrets.NEW_MAVEN_SNAPSHOT_URL }}
+          SNAPSHOTS_USERNAME: ${{ secrets.NEW_MAVEN_SNAPSHOT_USERNAME }}
+          SNAPSHOTS_PASSWORD: ${{ secrets.NEW_MAVEN_SNAPSHOT_PASSWORD }}
