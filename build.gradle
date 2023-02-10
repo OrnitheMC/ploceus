@@ -137,3 +137,14 @@ publishing {
 		}
 	}
 }
+
+tasks.withType(PublishToMavenRepository) {
+	onlyIf {
+		(repository == publishing.repositories.release && publication == publishing.publications.plugin)
+				||
+				(repository == publishing.repositories.snapshot
+						&& (publication == publishing.publications.snapshot
+						|| publication == publishing.publications.snapshotPlugin))
+				|| (repository == publishing.repositories.release && publication.name == "ploceusPluginMarkerMaven")
+	}
+}
