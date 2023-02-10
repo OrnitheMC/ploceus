@@ -3,11 +3,10 @@ package net.ornithemc.ploceus;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.configuration.DependencyInfo;
-import net.fabricmc.loom.configuration.processors.JarProcessor;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 
-import net.ornithemc.ploceus.nester.NesterJarProcessor;
+import net.ornithemc.ploceus.nester.NestedMappingsLayer;
+import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
 
 public class PloceusGradleExtension {
@@ -16,22 +15,25 @@ public class PloceusGradleExtension {
 		return (PloceusGradleExtension)project.getExtensions().getByName("ploceus");
 	}
 
+	private final Project project;
+
 	public PloceusGradleExtension(Project project) {
-		apply(project, LoomGradleExtension.get(project));
+		this.project = project;
+
+		apply(LoomGradleExtension.get(this.project));
 	}
 
-	private void apply(Project project, LoomGradleExtension loom) {
+	private void apply(LoomGradleExtension loom) {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
 
-		JarProcessor nester = new NesterJarProcessor(project);
-		loom.addJarProcessor(nester);
+		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 	}
 
-	public NestsProvider getNestsProvider(Project project) {
-		LoomGradleExtension loom = LoomGradleExtension.get(project);
-		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		DependencyInfo dependency = DependencyInfo.create(project, Constants.NESTS_CONFIGURATION);
+	public NestsProvider getNestsProvider() {
+		return NestsProvider.of(project);
+	}
 
-		return NestsProvider.of(project, dependency, minecraft);
+	public void nestedMappings(LayeredMappingSpecBuilder builder) {
+		builder.addLayer(ctx -> new NestedMappingsLayer(ctx, this));
 	}
 }
