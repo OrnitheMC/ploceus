@@ -89,7 +89,7 @@ public class NestedMappingsLayer implements MappingLayer {
 			// saved mostly intact, which makes translation here 
 			// easier
 			String enclTranslation = translate(nest.enclClassName);
-			String translation = c.getName(nsid).replace('_', '$');
+			String translation = c.getName(nsid).replace("__", "$");
 			int idx = translation.lastIndexOf('$');
 
 			if (idx > 0) {
