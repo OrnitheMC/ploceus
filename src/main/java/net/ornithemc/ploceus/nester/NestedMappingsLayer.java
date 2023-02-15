@@ -137,7 +137,7 @@ public class NestedMappingsLayer implements MappingLayer {
 		private static String stripInnerName(String simpleName) {
 			int i = 0;
 
-			while (Character.isDigit(simpleName.charAt(i))) {
+			while (i < simpleName.length() && Character.isDigit(simpleName.charAt(i))) {
 				i++;
 			}
 
