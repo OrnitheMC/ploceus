@@ -46,7 +46,7 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 			Path tmp = Files.createTempFile("tmp", ".jar");
 
 			// nester does not allow src and dst to be same file
-			Files.copy(jar, tmp, StandardCopyOption.REPLACE_EXISTING);
+			Files.move(jar, tmp, StandardCopyOption.REPLACE_EXISTING);
 
 			Nester.Options options = new Nester.Options().
 				silent(true).
