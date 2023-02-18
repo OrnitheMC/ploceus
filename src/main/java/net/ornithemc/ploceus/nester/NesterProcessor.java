@@ -14,7 +14,7 @@ import net.fabricmc.loom.api.processor.SpecContext;
 import net.fabricmc.mappingio.tree.MappingTree;
 
 import net.ornithemc.nester.Nester;
-
+import net.ornithemc.nester.nest.Nests;
 import net.ornithemc.ploceus.PloceusGradleExtension;
 
 public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Spec> {
@@ -41,7 +41,7 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 	public void processJar(Path jar, Spec spec, ProcessorContext ctx) throws IOException {
 		try {
 			MappingTree mappings = ctx.getMappings();
-			NestsProvider nests = spec.nests;
+			Nests nests = spec.nests.map(mappings);
 
 			Path tmp = Files.createTempFile("tmp", ".jar");
 
@@ -51,7 +51,7 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 			Nester.Options options = new Nester.Options().
 				silent(true).
 				remap(false);
-			Nester.nestJar(options, tmp, jar, nests.map(mappings));
+			Nester.nestJar(options, tmp, jar, nests);
 		} catch (IOException e) {
 			throw new RuntimeException("failed to nest jar!", e);
 		}
