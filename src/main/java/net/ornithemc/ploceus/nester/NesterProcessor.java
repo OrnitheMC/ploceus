@@ -61,13 +61,19 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 
 		private final NestsProvider nests;
 
+		private Integer hashCode;
+
 		public Spec(NestsProvider nests) {
 			this.nests = nests;
 		}
 
 		@Override
 		public int hashCode() {
-			return nests.path().hashCode();
+			if (hashCode == null) {
+				hashCode = nests.get().hashCode();
+			}
+
+			return hashCode;
 		}
 	}
 }
