@@ -26,6 +26,7 @@ public class PloceusGradleExtension {
 	private void apply(LoomGradleExtension loom) {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
 
+		loom.getCustomMinecraftManifest().set("https://skyrising.github.io/mc-versions/version_manifest.json");
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 	}
 
