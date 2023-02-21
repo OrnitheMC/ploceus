@@ -34,10 +34,6 @@ public class PloceusGradleExtension {
 	}
 
 	public void nestedMappings(LayeredMappingSpecBuilder builder) {
-		NestsProvider nests = getNestsProvider();
-
-		if (nests.provide()) {
-			builder.addLayer(new NestedMappingsSpec(nests.get()));
-		}
+		builder.addLayer(new NestedMappingsSpec(this));
 	}
 }

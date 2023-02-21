@@ -15,12 +15,14 @@ import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.ornithemc.nester.nest.Nest;
 import net.ornithemc.nester.nest.Nests;
 
+import net.ornithemc.ploceus.PloceusGradleExtension;
+
 public class NestedMappingsLayer implements MappingLayer {
 
-	private final Nests nests;
+	private final PloceusGradleExtension ploceus;
 
-	public NestedMappingsLayer(Nests nests) {
-		this.nests = nests;
+	public NestedMappingsLayer(PloceusGradleExtension ploceus) {
+		this.ploceus = ploceus;
 	}
 
 	@Override
@@ -31,7 +33,11 @@ public class NestedMappingsLayer implements MappingLayer {
 	@Override
 	public void visit(MappingVisitor visitor) throws IOException {
 		if (visitor instanceof MappingTree mappings) {
-			new Nester(mappings, nests).apply(visitor);
+			NestsProvider nests = ploceus.getNestsProvider();
+
+			if (nests.provide()) {
+				new Nester(mappings, nests.get()).apply(visitor);
+			}
 		}
 	}
 
