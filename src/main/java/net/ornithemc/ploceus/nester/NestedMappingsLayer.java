@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.fabricmc.loom.api.mappings.layered.MappingContext;
 import net.fabricmc.loom.api.mappings.layered.MappingLayer;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 
@@ -16,14 +15,12 @@ import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.ornithemc.nester.nest.Nest;
 import net.ornithemc.nester.nest.Nests;
 
-import net.ornithemc.ploceus.PloceusGradleExtension;
-
 public class NestedMappingsLayer implements MappingLayer {
 
-	private final PloceusGradleExtension ploceus;
+	private final Nests nests;
 
-	public NestedMappingsLayer(MappingContext ctx, PloceusGradleExtension ploceus) {
-		this.ploceus = ploceus;
+	public NestedMappingsLayer(Nests nests) {
+		this.nests = nests;
 	}
 
 	@Override
@@ -34,11 +31,7 @@ public class NestedMappingsLayer implements MappingLayer {
 	@Override
 	public void visit(MappingVisitor visitor) throws IOException {
 		if (visitor instanceof MappingTree mappings) {
-			NestsProvider nests = ploceus.getNestsProvider();
-
-			if (nests.provide()) {
-				new Nester(mappings, nests.get()).apply(visitor);
-			}
+			new Nester(mappings, nests).apply(visitor);
 		}
 	}
 

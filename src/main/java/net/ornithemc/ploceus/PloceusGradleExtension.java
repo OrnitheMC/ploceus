@@ -5,7 +5,7 @@ import org.gradle.api.Project;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 
-import net.ornithemc.ploceus.nester.NestedMappingsLayer;
+import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
 
@@ -34,6 +34,10 @@ public class PloceusGradleExtension {
 	}
 
 	public void nestedMappings(LayeredMappingSpecBuilder builder) {
-		builder.addLayer(ctx -> new NestedMappingsLayer(ctx, this));
+		NestsProvider nests = getNestsProvider();
+
+		if (nests.provide()) {
+			builder.addLayer(new NestedMappingsSpec(nests.get()));
+		}
 	}
 }
