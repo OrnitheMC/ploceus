@@ -25,9 +25,9 @@ public class PloceusGradleExtension {
 
 	private void apply(LoomGradleExtension loom) {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
+		project.getExtensions().getExtraProperties().set("loom_version_manifests", "https://skyrising.github.io/mc-versions/version_manifest.json");
 
 		loom.getIntermediaryUrl().convention("https://maven.ornithemc.net/releases/net/ornithemc/calamus-intermediary/%1$s/calamus-intermediary-%1$s-v2.jar");
-		loom.getCustomMinecraftManifest().set("https://skyrising.github.io/mc-versions/version_manifest.json");
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 	}
 
