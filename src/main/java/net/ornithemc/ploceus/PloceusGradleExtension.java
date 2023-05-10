@@ -25,9 +25,9 @@ public class PloceusGradleExtension {
 
 	private void apply(LoomGradleExtension loom) {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
-		project.getExtensions().getExtraProperties().set("loom_version_manifests", "https://skyrising.github.io/mc-versions/version_manifest.json");
+		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
-		loom.getIntermediaryUrl().convention("https://maven.ornithemc.net/releases/net/ornithemc/calamus-intermediary/%1$s/calamus-intermediary-%1$s-v2.jar");
+		loom.getIntermediaryUrl().convention(Constants.CALAMUS_INTERMEDIARY_URL);
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 	}
 
@@ -37,5 +37,17 @@ public class PloceusGradleExtension {
 
 	public void nestedMappings(LayeredMappingSpecBuilder builder) {
 		builder.addLayer(new NestedMappingsSpec(this));
+	}
+
+	public void clientOnlyMappings() {
+		setIntermediaryUrl(Constants.CALAMUS_INTERMEDIARY_URL.replace("%1$s", "%1$s-client"));
+	}
+
+	public void serverOnlyMappings() {
+		setIntermediaryUrl(Constants.CALAMUS_INTERMEDIARY_URL.replace("%1$s", "%1$s-server"));
+	}
+
+	private void setIntermediaryUrl(String url) {
+		LoomGradleExtension.get(project).getIntermediaryUrl().convention(url);
 	}
 }

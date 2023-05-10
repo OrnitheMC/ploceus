@@ -7,4 +7,9 @@ public class Constants {
 
 	public static final String NESTS_CONFIGURATION = "nests";
 
+	public static final String VERSION_MANIFEST_PROPERTY = "loom_version_manifests";
+	public static final String VERSION_MANIFEST_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
+
+	public static final String CALAMUS_INTERMEDIARY_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s/calamus-intermediary-%1$s-v2.jar";
+
 }
