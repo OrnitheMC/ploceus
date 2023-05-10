@@ -14,10 +14,10 @@ jobs:
       # Generate the build number based on tags to allow per branch build numbers, not something github provides by default.
       - name: Generate build number
         id: buildnumber
-        uses: onyxmueller/build-tag-number@v1
+        uses: einaregilsson/build-number@v3
         with:
           token: ${{ secrets.github_token }}
-          prefix: ${{ github.ref }}
+          prefix: ${{ github.ref_name }}
       - run: git config --global user.email "nobody@example.com"
       - run: git config --global user.name "Nobody"
       - name: setup jdk
