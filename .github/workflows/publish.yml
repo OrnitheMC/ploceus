@@ -17,6 +17,7 @@ jobs:
         uses: einaregilsson/build-number@v3
         with:
           token: ${{ secrets.github_token }}
+          prefix: ${{ github.ref }}
       - run: git config --global user.email "nobody@example.com"
       - run: git config --global user.name "Nobody"
       - name: setup jdk
