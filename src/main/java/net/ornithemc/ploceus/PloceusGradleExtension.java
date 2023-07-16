@@ -3,8 +3,8 @@ package net.ornithemc.ploceus;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 
+import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
 import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
@@ -16,14 +16,16 @@ public class PloceusGradleExtension {
 	}
 
 	private final Project project;
+	private final LoomGradleExtension loom;
 
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
+		this.loom = LoomGradleExtension.get(this.project);
 
-		apply(LoomGradleExtension.get(this.project));
+		apply();
 	}
 
-	private void apply(LoomGradleExtension loom) {
+	private void apply() {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
 		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
@@ -35,19 +37,23 @@ public class PloceusGradleExtension {
 		return NestsProvider.of(project);
 	}
 
-	public void nestedMappings(LayeredMappingSpecBuilder builder) {
-		builder.addLayer(new NestedMappingsSpec(this));
+	public NestedMappingsSpec nestedMappings() {
+		return new NestedMappingsSpec(this);
 	}
 
 	public void clientOnlyMappings() {
-		setIntermediaryUrl(Constants.CALAMUS_INTERMEDIARY_URL.replace("%1$s", "%1$s-client"));
+		setIntermediaryProvider(GameSide.CLIENT);
 	}
 
 	public void serverOnlyMappings() {
-		setIntermediaryUrl(Constants.CALAMUS_INTERMEDIARY_URL.replace("%1$s", "%1$s-server"));
+		setIntermediaryProvider(GameSide.SERVER);
 	}
 
-	private void setIntermediaryUrl(String url) {
-		LoomGradleExtension.get(project).getIntermediaryUrl().convention(url);
+	private void setIntermediaryProvider(GameSide side) {
+		loom.getIntermediaryUrl().convention(Constants.CALAMUS_INTERMEDIARY_URL.replace("%1$s", "%1$s" + side.suffix()));
+
+		loom.setIntermediateMappingsProvider(SidedIntermediaryMappingsProvider.class, provider -> {
+			provider.configure(project, loom, side);
+		});
 	}
 }
