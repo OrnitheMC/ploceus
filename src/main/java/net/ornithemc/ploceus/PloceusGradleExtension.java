@@ -29,8 +29,8 @@ public class PloceusGradleExtension {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
 		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
-		loom.getIntermediaryUrl().convention(Constants.CALAMUS_INTERMEDIARY_URL);
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
+		setIntermediaryProvider(GameSide.MERGED);
 	}
 
 	public NestsProvider getNestsProvider() {
