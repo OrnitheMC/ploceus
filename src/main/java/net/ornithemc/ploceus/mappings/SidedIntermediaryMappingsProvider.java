@@ -15,7 +15,7 @@ public abstract class SidedIntermediaryMappingsProvider extends IntermediaryMapp
 
 	@Override
 	public String getName() {
-		return side.prefix() + super.getName();
+		return side.prefix() + "calamus-" + super.getName();
 	}
 
 	public void configure(Project project, LoomGradleExtension loom, GameSide side) {
