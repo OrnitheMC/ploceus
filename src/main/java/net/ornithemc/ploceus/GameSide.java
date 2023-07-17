@@ -2,7 +2,7 @@ package net.ornithemc.ploceus;
 
 public enum GameSide {
 
-	CLIENT("client"), SERVER("server"), MERGED("");
+	CLIENT("client"), SERVER("server"), MERGED("merged");
 
 	private GameSide(String id) {
 		this.id = id;
@@ -15,10 +15,10 @@ public enum GameSide {
 	}
 
 	public String prefix() {
-		return id + "-";
+		return this == MERGED ? "" : id + "-";
 	}
 
 	public String suffix() {
-		return "-" + id;
+		return this == MERGED ? "" : "-" + id;
 	}
 }
