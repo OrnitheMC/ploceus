@@ -1,6 +1,7 @@
 package net.ornithemc.ploceus;
 
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
 
 import net.fabricmc.loom.LoomGradleExtension;
 
@@ -17,10 +18,12 @@ public class PloceusGradleExtension {
 
 	private final Project project;
 	private final LoomGradleExtension loom;
+	private final OslVersionCache oslVersions;
 
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
 		this.loom = LoomGradleExtension.get(this.project);
+		this.oslVersions = new OslVersionCache(this.project);
 
 		apply();
 	}
@@ -39,6 +42,14 @@ public class PloceusGradleExtension {
 
 	public NestedMappingsSpec nestedMappings() {
 		return new NestedMappingsSpec(this);
+	}
+
+	public Dependency osl(String module, String version) throws Exception {
+		String dependency = String.format("%s:%s:%s",
+			Constants.OSL_MAVEN_GROUP,
+			module,
+			oslVersions.get(module, version));
+		return project.getDependencies().create(dependency);
 	}
 
 	public void clientOnlyMappings() {
