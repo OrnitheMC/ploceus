@@ -27,7 +27,7 @@ public class OslVersionCache {
 
 	private String mcVersion() {
 		if (mcVersion == null) {
-			mcVersion = DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getResolvedVersion();
+			mcVersion = DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion();
 		}
 
 		return mcVersion;
