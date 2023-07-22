@@ -43,6 +43,7 @@ dependencies {
 
 	compileOnly("net.fabricmc:fabric-loom:" + baseVersion + "-SNAPSHOT")
 
+	implementation("com.google.code.gson:gson:2.8.8")
 	implementation("net.fabricmc:mapping-io:0.2.1")
 	implementation("net.ornithemc:nester:1.1.2")
 }

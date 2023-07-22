@@ -6,10 +6,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.gradle.api.Project;
-import org.gradle.internal.impldep.com.google.gson.JsonArray;
-import org.gradle.internal.impldep.com.google.gson.JsonElement;
-import org.gradle.internal.impldep.com.google.gson.JsonObject;
-import org.gradle.internal.impldep.com.google.gson.JsonParser;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import net.fabricmc.loom.configuration.DependencyInfo;
 
