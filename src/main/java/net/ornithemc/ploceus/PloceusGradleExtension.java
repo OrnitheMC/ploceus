@@ -1,5 +1,7 @@
 package net.ornithemc.ploceus;
 
+import java.util.Map;
+
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 
@@ -44,12 +46,17 @@ public class PloceusGradleExtension {
 		return new NestedMappingsSpec(this);
 	}
 
-	public Dependency osl(String module, String version) throws Exception {
-		String dependency = String.format("%s:%s:%s",
+	public void dependOsl(String version) throws Exception {
+		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
+			dependOsl(entry.getKey(), entry.getValue());
+		}
+	}
+
+	public void dependOsl(String module, String version) throws Exception {
+		project.getDependencies().add("modImplementation", String.format("%s:%s:%s",
 			Constants.OSL_MAVEN_GROUP,
 			module,
-			oslVersions.get(module, version));
-		return project.getDependencies().create(dependency);
+			oslVersions.getVersion(module, version)));
 	}
 
 	public void clientOnlyMappings() {

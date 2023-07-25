@@ -17,6 +17,7 @@ public class Constants {
 	public static final String OSL_MAVEN_GROUP = "net.ornithemc.osl";
 	public static final String OSL_CORE = "core";
 
-	public static final String OSL_META_ENDPOINT = "/v3/versions/osl/%s/%s/%s";
+	public static final String OSL_META_ENDPOINT = "/v3/versions/osl/%s";
+	public static final String OSL_MODULE_META_ENDPOINT = "/v3/versions/osl/%s/%s/%s";
 
 }
