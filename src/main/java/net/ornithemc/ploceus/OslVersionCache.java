@@ -66,7 +66,7 @@ public class OslVersionCache {
 		return Collections.unmodifiableMap(modules);
 	}
 
-	public String getVersion(String module, String version) throws Exception {
+	public String getVersion(String module, String version, GameSide side) throws Exception {
 		String key = module + version;
 		String cachedVersion = versions.get(key);
 
@@ -83,11 +83,14 @@ public class OslVersionCache {
 			JsonElement json = JsonParser.parseReader(input);
 			JsonArray array = json.getAsJsonArray();
 
-			if (!array.isEmpty()) {
-				JsonElement versionJson = array.get(0);
+			for (JsonElement versionJson : array) {
 				JsonObject versionJsonObj = versionJson.getAsJsonObject();
+				String moduleVersion = versionJsonObj.get("version").getAsString();
 
-				versions.put(key, cachedVersion = versionJsonObj.get("version").getAsString());
+				if (side == GameSide.MERGED || moduleVersion.contains(side.id())) {
+					versions.put(key, cachedVersion = moduleVersion);
+					break;
+				}
 			}
 		}
 

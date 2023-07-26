@@ -1,5 +1,7 @@
 package net.ornithemc.ploceus;
 
+import java.util.NoSuchElementException;
+
 public enum GameSide {
 
 	CLIENT("client"), SERVER("server"), MERGED("merged");
@@ -20,5 +22,19 @@ public enum GameSide {
 
 	public String suffix() {
 		return this == MERGED ? "" : "-" + id;
+	}
+
+	public static GameSide of(String side) {
+		if ("*".equals(side)) {
+			return MERGED;
+		}
+		if ("client".equals(side)) {
+			return CLIENT;
+		}
+		if ("server".equals(side)) {
+			return SERVER;
+		}
+
+		throw new NoSuchElementException("no game side with name " + side);
 	}
 }

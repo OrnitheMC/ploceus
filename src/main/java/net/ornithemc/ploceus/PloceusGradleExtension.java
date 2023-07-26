@@ -3,7 +3,6 @@ package net.ornithemc.ploceus;
 import java.util.Map;
 
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Dependency;
 
 import net.fabricmc.loom.LoomGradleExtension;
 
@@ -47,16 +46,32 @@ public class PloceusGradleExtension {
 	}
 
 	public void dependOsl(String version) throws Exception {
+		dependOsl(version, GameSide.MERGED);
+	}
+
+	public void dependOsl(String version, String side) throws Exception {
+		dependOsl(version, GameSide.of(side));
+	}
+
+	public void dependOsl(String version, GameSide side) throws Exception {
 		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
-			dependOsl(entry.getKey(), entry.getValue());
+			dependOslModule(entry.getKey(), entry.getValue(), side);
 		}
 	}
 
-	public void dependOsl(String module, String version) throws Exception {
+	public void dependOslModule(String module, String version) throws Exception {
+		dependOslModule(module, version, GameSide.MERGED);
+	}
+
+	public void dependOslModule(String module, String version, String side) throws Exception {
+		dependOslModule(module, version, GameSide.of(side));
+	}
+
+	public void dependOslModule(String module, String version, GameSide side) throws Exception {
 		project.getDependencies().add("modImplementation", String.format("%s:%s:%s",
 			Constants.OSL_MAVEN_GROUP,
 			module,
-			oslVersions.getVersion(module, version)));
+			oslVersions.getVersion(module, version, side)));
 	}
 
 	public void clientOnlyMappings() {
