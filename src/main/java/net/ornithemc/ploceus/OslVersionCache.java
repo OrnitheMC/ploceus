@@ -87,7 +87,7 @@ public class OslVersionCache {
 				JsonObject versionJsonObj = versionJson.getAsJsonObject();
 				String moduleVersion = versionJsonObj.get("version").getAsString();
 
-				if (side == GameSide.MERGED || moduleVersion.contains(side.id())) {
+				if (side == GameSide.MERGED || module.equals(Constants.OSL_CORE) || moduleVersion.contains(side.id())) {
 					versions.put(key, cachedVersion = moduleVersion);
 					break;
 				}
