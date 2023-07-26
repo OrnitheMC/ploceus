@@ -55,7 +55,6 @@ public class PloceusGradleExtension {
 
 	public void dependOsl(String version, GameSide side) throws Exception {
 		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
-			dependOslModule(entry.getKey(), entry.getValue(), side);
 			String module = entry.getKey();
 			String baseVersion = entry.getValue();
 			String moduleVersion = oslVersions.getVersion(module, baseVersion, side);
@@ -81,7 +80,7 @@ public class PloceusGradleExtension {
 		String moduleVersion = oslVersions.getVersion(module, version, side);
 
 		if (moduleVersion == null) {
-			throw new RuntimeException("module version " + version + " does not exist!");
+			throw new RuntimeException("module " + module + " version " + version + " does not exist!");
 		} else {
 			addOslModuleDependency(module, moduleVersion);
 		}
