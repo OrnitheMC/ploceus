@@ -5,8 +5,11 @@ import java.util.Map;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
+import net.fabricmc.loom.configuration.DependencyInfo;
 
 import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
+import net.ornithemc.ploceus.mcp.McpMappingsSpec;
 import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
@@ -43,6 +46,17 @@ public class PloceusGradleExtension {
 
 	public NestedMappingsSpec nestedMappings() {
 		return new NestedMappingsSpec(this);
+	}
+
+	public McpMappingsSpec mcpMappings(String channel, String build) {
+		return mcpMappings(channel, DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion(), build);
+	}
+
+	public McpMappingsSpec mcpMappings(String channel, String mc, String build) {
+		return new McpMappingsSpec(
+			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.SRG_MAPPINGS, mc)),
+			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.MCP_MAPPINGS, channel, build, mc))
+		);
 	}
 
 	public void dependOsl(String version) throws Exception {

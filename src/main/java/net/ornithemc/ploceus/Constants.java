@@ -6,6 +6,9 @@ public class Constants {
 	public static final String MAVEN_URL = "https://maven.ornithemc.net/releases";
 	public static final String META_URL = "https://meta.ornithemc.net";
 
+	public static final String FORGE_MAVEN_NAME = "Forge";
+	public static final String FORGE_MAVEN_URL = "https://maven.minecraftforge.net/";
+
 	public static final String MINECRAFT_CONFIGURATION = "minecraft";
 	public static final String NESTS_CONFIGURATION = "nests";
 
@@ -19,5 +22,9 @@ public class Constants {
 
 	public static final String OSL_META_ENDPOINT = "/v3/versions/osl/%s";
 	public static final String OSL_MODULE_META_ENDPOINT = "/v3/versions/osl/%s/%s/%s";
+
+	public static final String MCP_MAVEN_GROUP = "de.oceanlabs.mcp";
+	public static final String SRG_MAPPINGS = "mcp:%s:srg@zip";
+	public static final String MCP_MAPPINGS = "mcp_%s:%s-%s@zip";
 
 }

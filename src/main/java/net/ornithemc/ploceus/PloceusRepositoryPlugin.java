@@ -33,5 +33,13 @@ public class PloceusRepositoryPlugin implements Plugin<PluginAware> {
 			repo.setName(Constants.MAVEN_NAME);
 			repo.setUrl(Constants.MAVEN_URL);
 		});
+		repositories.maven(repo -> {
+			repo.setName(Constants.FORGE_MAVEN_NAME);
+			repo.setUrl(Constants.FORGE_MAVEN_URL);
+			repo.metadataSources(sources -> {
+				sources.mavenPom();
+				sources.artifact();
+			});
+		});
 	}
 }
