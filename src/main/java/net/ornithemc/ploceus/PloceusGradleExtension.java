@@ -54,6 +54,7 @@ public class PloceusGradleExtension {
 
 	public McpMappingsSpec mcpMappings(String channel, String mc, String build) {
 		return new McpMappingsSpec(
+			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_INTERMEDIARY_MAPPINGS, mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.SRG_MAPPINGS, mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.MCP_MAPPINGS, channel, build, mc))
 		);

@@ -17,7 +17,9 @@ import java.util.zip.ZipFile;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 
 import net.fabricmc.mappingio.MappedElementKind;
+import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
+import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.fabricmc.mappingio.tree.MappingTree.FieldMapping;
 import net.fabricmc.mappingio.tree.MappingTree.MethodMapping;
@@ -26,23 +28,26 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class McpReader {
 
-	public static void read(Path srg, Path mcp, MappingVisitor visitor) throws IOException {
-		read(srg, mcp).accept(visitor);
+	public static void read(Path intermediary, Path srg, Path mcp, MappingVisitor visitor) throws IOException {
+		read(intermediary, srg, mcp).accept(new MappingSourceNsSwitch(visitor, INTERMEDIARY_NAMESPACE));
 	}
 
-	public static MappingTreeView read(Path srg, Path mcp) throws IOException {
-		return new McpReader(srg, mcp).read();
+	public static MappingTreeView read(Path intermediary, Path srg, Path mcp) throws IOException {
+		return new McpReader(intermediary, srg, mcp).read();
 	}
 
-	private static final String OFFICIAL_NAMESPACE = MappingsNamespace.OFFICIAL.name().toLowerCase();
-	private static final String SRG_NAMESPACE      = "srg";
-	private static final String NAMED_NAMESPACE    = MappingsNamespace.NAMED.name().toLowerCase();
+	private static final String OFFICIAL_NAMESPACE     = MappingsNamespace.OFFICIAL.name().toLowerCase();
+	private static final String INTERMEDIARY_NAMESPACE = MappingsNamespace.INTERMEDIARY.name().toLowerCase();
+	private static final String SRG_NAMESPACE          = "srg";
+	private static final String NAMED_NAMESPACE        = MappingsNamespace.NAMED.name().toLowerCase();
 
+	private static final String INTERMEDIARY_TINY = "mappings/mappings.tiny";
 	private static final String JOINED_SRG  = "joined.srg";
 	private static final String FIELDS_CSV  = "fields.csv";
 	private static final String METHODS_CSV = "methods.csv";
 	private static final String PARAMS_CSV  = "params.csv";
 
+	private Path intermediaryFile;
 	private Path srgFile;
 	private Path mcpFile;
 	// The CSV files for field, method, and parameter mappings
@@ -55,7 +60,8 @@ public class McpReader {
 
 	private MemoryMappingTree mappings;
 
-	private McpReader(Path srgFile, Path mcpFile) {
+	private McpReader(Path intermediaryFile, Path srgFile, Path mcpFile) {
+		this.intermediaryFile = intermediaryFile;
 		this.srgFile = srgFile;
 		this.mcpFile = mcpFile;
 		this.fieldClasses = new HashMap<>();
@@ -100,6 +106,17 @@ public class McpReader {
 			}
 			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(params))) {
 				readParams(input);
+			}
+		}
+		try (ZipFile zip = new ZipFile(intermediaryFile.toFile())) {
+			ZipEntry intermediary = zip.getEntry(INTERMEDIARY_TINY);
+
+			if (intermediary == null) {
+				throw new FileNotFoundException("intermediary mappings are missing!");
+			}
+
+			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(intermediary))) {
+				MappingReader.read(input, mappings);
 			}
 		}
 
@@ -215,9 +232,12 @@ public class McpReader {
 					if (visitCls) {
 						if (field ? mappings.visitField(src, null) : mappings.visitMethod(src, srcDesc)) {
 							MappedElementKind kind = field ? MappedElementKind.FIELD : MappedElementKind.METHOD;
+							boolean obf = field ? dst.startsWith("field_") : dst.startsWith("func_");
 
 							mappings.visitDstName(kind, 0, dst);
-							mappings.visitDstName(kind, 1, dst);
+							if (!obf) {
+								mappings.visitDstName(kind, 1, dst);
+							}
 							mappings.visitElementContent(kind);
 
 							if (field) {

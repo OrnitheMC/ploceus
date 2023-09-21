@@ -6,10 +6,12 @@ import net.fabricmc.loom.api.mappings.layered.spec.MappingsSpec;
 
 public class McpMappingsSpec implements MappingsSpec<McpMappingsLayer> {
 
+	private final FileSpec intermediaryFile;
 	private final FileSpec srgFile;
 	private final FileSpec mcpFile;
 
-	public McpMappingsSpec(FileSpec srgFile, FileSpec mcpFile) {
+	public McpMappingsSpec(FileSpec intermediaryFile, FileSpec srgFile, FileSpec mcpFile) {
+		this.intermediaryFile = intermediaryFile;
 		this.srgFile = srgFile;
 		this.mcpFile = mcpFile;
 	}
@@ -21,6 +23,6 @@ public class McpMappingsSpec implements MappingsSpec<McpMappingsLayer> {
 
 	@Override
 	public McpMappingsLayer createLayer(MappingContext ctx) {
-		return new McpMappingsLayer(srgFile.get(ctx), mcpFile.get(ctx));
+		return new McpMappingsLayer(intermediaryFile.get(ctx), srgFile.get(ctx), mcpFile.get(ctx));
 	}
 }

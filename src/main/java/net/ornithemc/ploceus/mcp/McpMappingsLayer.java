@@ -11,21 +11,23 @@ import net.ornithemc.ploceus.mcp.io.McpReader;
 
 public class McpMappingsLayer implements MappingLayer {
 
+	private Path intermediaryFile;
 	private Path srgFile;
 	private Path mcpFile;
 
-	public McpMappingsLayer(Path srgFile, Path mcpFile) {
+	public McpMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile) {
+		this.intermediaryFile = intermediaryFile;
 		this.srgFile = srgFile;
 		this.mcpFile = mcpFile;
 	}
 
 	@Override
 	public MappingsNamespace getSourceNamespace() {
-		return MappingsNamespace.OFFICIAL;
+		return MappingsNamespace.INTERMEDIARY;
 	}
 
 	@Override
 	public void visit(MappingVisitor visitor) throws IOException {
-		McpReader.read(srgFile, mcpFile, visitor);
+		McpReader.read(intermediaryFile, srgFile, mcpFile, visitor);
 	}
 }
