@@ -19,6 +19,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.mappingio.MappedElementKind;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
+import net.fabricmc.mappingio.adapter.MappingDstNsReorder;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.fabricmc.mappingio.tree.MappingTree.FieldMapping;
@@ -29,7 +30,7 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 public class McpReader {
 
 	public static void read(Path intermediary, Path srg, Path mcp, MappingVisitor visitor) throws IOException {
-		read(intermediary, srg, mcp).accept(new MappingSourceNsSwitch(visitor, INTERMEDIARY_NAMESPACE));
+		read(intermediary, srg, mcp).accept(new MappingDstNsReorder(new MappingSourceNsSwitch(visitor, INTERMEDIARY_NAMESPACE), NAMED_NAMESPACE));
 	}
 
 	public static MappingTreeView read(Path intermediary, Path srg, Path mcp) throws IOException {
