@@ -30,7 +30,7 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 public class McpReader {
 
 	public static void read(Path intermediary, Path srg, Path mcp, MappingVisitor visitor) throws IOException {
-		read(intermediary, srg, mcp).accept(new MappingDstNsReorder(new MappingSourceNsSwitch(visitor, INTERMEDIARY_NAMESPACE), NAMED_NAMESPACE));
+		read(intermediary, srg, mcp).accept(new MappingSourceNsSwitch(new MappingDstNsReorder(visitor, NAMED_NAMESPACE), INTERMEDIARY_NAMESPACE));
 	}
 
 	public static MappingTreeView read(Path intermediary, Path srg, Path mcp) throws IOException {
