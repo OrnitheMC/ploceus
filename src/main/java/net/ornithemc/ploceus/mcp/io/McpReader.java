@@ -217,6 +217,7 @@ public class McpReader {
 							MappedElementKind kind = field ? MappedElementKind.FIELD : MappedElementKind.METHOD;
 
 							mappings.visitDstName(kind, 0, dst);
+							mappings.visitDstName(kind, 1, dst);
 							mappings.visitElementContent(kind);
 
 							if (field) {
