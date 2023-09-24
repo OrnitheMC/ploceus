@@ -92,13 +92,25 @@ public class PloceusGradleExtension {
 	}
 
 	public void dependOslModule(String module, String version, GameSide side) throws Exception {
+		addOslModuleDependency(module, oslModule(module, version, side));
+	}
+
+	public String oslModule(String module, String version) throws Exception {
+		return oslModule(module, version, GameSide.MERGED);
+	}
+
+	public String oslModule(String module, String version, String side) throws Exception {
+		return oslModule(module, version, GameSide.of(side));
+	}
+
+	public String oslModule(String module, String version, GameSide side) throws Exception {
 		String moduleVersion = oslVersions.getVersion(module, version, side);
 
 		if (moduleVersion == null) {
-			throw new RuntimeException("module " + module + " version " + version + " does not exist!");
-		} else {
-			addOslModuleDependency(module, moduleVersion);
+			throw new RuntimeException("osl " + module + " version " + version + " for " + side.id() + " does not exist");
 		}
+
+		return moduleVersion;
 	}
 
 	private void addOslModuleDependency(String module, String version) {
