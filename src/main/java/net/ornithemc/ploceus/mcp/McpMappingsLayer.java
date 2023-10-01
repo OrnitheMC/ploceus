@@ -9,17 +9,7 @@ import net.fabricmc.mappingio.MappingVisitor;
 
 import net.ornithemc.ploceus.mcp.io.McpReader;
 
-public class McpMappingsLayer implements MappingLayer {
-
-	private Path intermediaryFile;
-	private Path srgFile;
-	private Path mcpFile;
-
-	public McpMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile) {
-		this.intermediaryFile = intermediaryFile;
-		this.srgFile = srgFile;
-		this.mcpFile = mcpFile;
-	}
+public record McpMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile) implements MappingLayer {
 
 	@Override
 	public MappingsNamespace getSourceNamespace() {

@@ -17,13 +17,7 @@ import net.ornithemc.nester.nest.Nests;
 
 import net.ornithemc.ploceus.PloceusGradleExtension;
 
-public class NestedMappingsLayer implements MappingLayer {
-
-	private final PloceusGradleExtension ploceus;
-
-	public NestedMappingsLayer(PloceusGradleExtension ploceus) {
-		this.ploceus = ploceus;
-	}
+public record NestedMappingsLayer(PloceusGradleExtension ploceus) implements MappingLayer {
 
 	@Override
 	public MappingsNamespace getSourceNamespace() {
