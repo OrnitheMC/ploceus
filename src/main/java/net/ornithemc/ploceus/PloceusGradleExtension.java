@@ -9,7 +9,8 @@ import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.configuration.DependencyInfo;
 
 import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
-import net.ornithemc.ploceus.mcp.McpMappingsSpec;
+import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
+import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
@@ -48,15 +49,26 @@ public class PloceusGradleExtension {
 		return new NestedMappingsSpec(this);
 	}
 
-	public McpMappingsSpec mcpMappings(String channel, String build) {
+	public McpModernMappingsSpec mcpMappings(String channel, String build) {
 		return mcpMappings(channel, DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion(), build);
 	}
 
-	public McpMappingsSpec mcpMappings(String channel, String mc, String build) {
-		return new McpMappingsSpec(
+	public McpModernMappingsSpec mcpMappings(String channel, String mc, String build) {
+		return new McpModernMappingsSpec(
 			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_INTERMEDIARY_MAPPINGS, mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.SRG_MAPPINGS, mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.MCP_MAPPINGS, channel, build, mc))
+		);
+	}
+
+	public McpForgeMappingsSpec mcpForgeMappings(String version) {
+		return mcpForgeMappings(DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion(), version);
+	}
+
+	public McpForgeMappingsSpec mcpForgeMappings(String mc, String version) {
+		return new McpForgeMappingsSpec(
+			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_INTERMEDIARY_MAPPINGS, mc)),
+			FileSpec.create(String.format(Constants.FORGE_MAVEN_GROUP+ ":" + Constants.FORGE_SRC, mc, version))
 		);
 	}
 

@@ -29,4 +29,7 @@ public class Constants {
 	public static final String SRG_MAPPINGS = "mcp:%s:srg@zip";
 	public static final String MCP_MAPPINGS = "mcp_%s:%s-%s@zip";
 
+	public static final String FORGE_MAVEN_GROUP = "net.minecraftforge.mcp";
+	public static final String FORGE_SRC = "forge:%s-%s:src@zip";
+
 }

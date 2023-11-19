@@ -9,7 +9,7 @@ import net.fabricmc.mappingio.MappingVisitor;
 
 import net.ornithemc.ploceus.mcp.io.McpReader;
 
-public record McpMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile) implements MappingLayer {
+public record McpForgeMappingsLayer(Path intermediaryFile, Path zipFile) implements MappingLayer {
 
 	@Override
 	public MappingsNamespace getSourceNamespace() {
@@ -18,6 +18,6 @@ public record McpMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile
 
 	@Override
 	public void visit(MappingVisitor visitor) throws IOException {
-		McpReader.read(intermediaryFile, srgFile, mcpFile, visitor);
+		McpReader.read(new McpForgeFiles(intermediaryFile, zipFile), visitor);
 	}
 }

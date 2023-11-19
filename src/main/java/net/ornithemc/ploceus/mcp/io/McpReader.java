@@ -1,18 +1,14 @@
 package net.ornithemc.ploceus.mcp.io;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 
@@ -27,14 +23,16 @@ import net.fabricmc.mappingio.tree.MappingTree.MethodMapping;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
+import net.ornithemc.ploceus.mcp.McpFiles;
+
 public class McpReader {
 
-	public static void read(Path intermediary, Path srg, Path mcp, MappingVisitor visitor) throws IOException {
-		read(intermediary, srg, mcp).accept(new MappingSourceNsSwitch(new MappingDstNsReorder(visitor, NAMED_NAMESPACE), INTERMEDIARY_NAMESPACE, true));
+	public static void read(McpFiles files, MappingVisitor visitor) throws IOException {
+		read(files).accept(new MappingSourceNsSwitch(new MappingDstNsReorder(visitor, NAMED_NAMESPACE), INTERMEDIARY_NAMESPACE, true));
 	}
 
-	public static MappingTreeView read(Path intermediary, Path srg, Path mcp) throws IOException {
-		return new McpReader(intermediary, srg, mcp).read();
+	public static MappingTreeView read(McpFiles files) throws IOException {
+		return new McpReader(files).read();
 	}
 
 	private static final String OFFICIAL_NAMESPACE     = MappingsNamespace.OFFICIAL.name().toLowerCase();
@@ -42,15 +40,7 @@ public class McpReader {
 	private static final String SRG_NAMESPACE          = "srg";
 	private static final String NAMED_NAMESPACE        = MappingsNamespace.NAMED.name().toLowerCase();
 
-	private static final String INTERMEDIARY_TINY = "mappings/mappings.tiny";
-	private static final String JOINED_SRG  = "joined.srg";
-	private static final String FIELDS_CSV  = "fields.csv";
-	private static final String METHODS_CSV = "methods.csv";
-	private static final String PARAMS_CSV  = "params.csv";
-
-	private Path intermediaryFile;
-	private Path srgFile;
-	private Path mcpFile;
+	private McpFiles files;
 	// The CSV files for field, method, and parameter mappings
 	// do not contain information about the enclosing classes
 	// of the mappings, so we cache those in these maps when
@@ -61,10 +51,8 @@ public class McpReader {
 
 	private MemoryMappingTree mappings;
 
-	private McpReader(Path intermediaryFile, Path srgFile, Path mcpFile) {
-		this.intermediaryFile = intermediaryFile;
-		this.srgFile = srgFile;
-		this.mcpFile = mcpFile;
+	private McpReader(McpFiles files) {
+		this.files = files;
 		this.fieldClasses = new HashMap<>();
 		this.methodClasses = new HashMap<>();
 		this.methods = new HashMap<>();
@@ -73,52 +61,20 @@ public class McpReader {
 	private MappingTreeView read() throws IOException {
 		mappings = new MemoryMappingTree();
 
-		try (ZipFile zip = new ZipFile(srgFile.toFile())) {
-			ZipEntry srg = zip.getEntry(JOINED_SRG);
-
-			if (srg == null) {
-				throw new FileNotFoundException("srg mappings are missing!");
-			}
-
-			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(srg))) {
-				readSrg(input);
-			}
+		try (InputStreamReader input = new InputStreamReader(files.readSrg())) {
+			readSrg(input);
 		}
-		try (ZipFile zip = new ZipFile(mcpFile.toFile())) {
-			ZipEntry fields = zip.getEntry(FIELDS_CSV);
-			ZipEntry methods = zip.getEntry(METHODS_CSV);
-			ZipEntry params = zip.getEntry(PARAMS_CSV);
-
-			if (fields == null) {
-				throw new FileNotFoundException("mcp field mappings are missing!");
-			}
-			if (methods == null) {
-				throw new FileNotFoundException("mcp method mappings are missing!");
-			}
-			if (params == null) {
-				throw new FileNotFoundException("mcp parameter mappings are missing!");
-			}
-
-			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(fields))) {
-				readFields(input);
-			}
-			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(methods))) {
-				readMethods(input);
-			}
-			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(params))) {
-				readParams(input);
-			}
+		try (InputStreamReader input = new InputStreamReader(files.readFields())) {
+			readFields(input);
 		}
-		try (ZipFile zip = new ZipFile(intermediaryFile.toFile())) {
-			ZipEntry intermediary = zip.getEntry(INTERMEDIARY_TINY);
-
-			if (intermediary == null) {
-				throw new FileNotFoundException("intermediary mappings are missing!");
-			}
-
-			try (InputStreamReader input = new InputStreamReader(zip.getInputStream(intermediary))) {
-				MappingReader.read(input, mappings);
-			}
+		try (InputStreamReader input = new InputStreamReader(files.readMethods())) {
+			readMethods(input);
+		}
+		try (InputStreamReader input = new InputStreamReader(files.readParams())) {
+			readParams(input);
+		}
+		try (InputStreamReader input = new InputStreamReader(files.readIntermediary())) {
+			MappingReader.read(input, mappings);
 		}
 
 		return mappings;
