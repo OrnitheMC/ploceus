@@ -18,20 +18,22 @@ import net.fabricmc.loom.configuration.DependencyInfo;
 public class OslVersionCache {
 
 	private final Project project;
+	private final PloceusGradleExtension ploceus;
 	private final Map<String, Map<String, String>> dependencies;
 	private final Map<String, String> versions;
 
 	private String mcVersion;
 
-	public OslVersionCache(Project project) {
+	public OslVersionCache(Project project, PloceusGradleExtension ploceus) {
 		this.project = project;
+		this.ploceus = ploceus;
 		this.dependencies = new HashMap<>();
 		this.versions = new HashMap<>();
 	}
 
 	private String mcVersion() {
 		if (mcVersion == null) {
-			mcVersion = DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion();
+			mcVersion = ploceus.minecraftVersion();
 		}
 
 		return mcVersion;

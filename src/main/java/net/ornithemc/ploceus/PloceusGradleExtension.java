@@ -1,7 +1,6 @@
 package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class PloceusGradleExtension {
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
 		this.loom = LoomGradleExtension.get(this.project);
-		this.oslVersions = new OslVersionCache(this.project);
+		this.oslVersions = new OslVersionCache(this.project, this);
 		this.commonLibraries = new CommonLibraries(this.project, this);
 
 		apply();
@@ -157,10 +156,14 @@ public class PloceusGradleExtension {
 		});
 	}
 
+	public String minecraftVersion() {
+		return DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion();
+	}
+
 	public String normalizedMinecraftVersion() {
 		// the normalized version id can be parsed from the version details file
 
-		String versionId = loom.getMinecraftProvider().minecraftVersion();
+		String versionId = minecraftVersion();
 
 		Path userCache = loom.getFiles().getUserCache().toPath();
 		Path manifestCache = userCache.resolve("version_manifest.json");
@@ -170,9 +173,9 @@ public class PloceusGradleExtension {
 			Manifest.Version version = manifest.getVersion(versionId);
 
 			String detailsUrl = version.details();
-			File detailsCache = loom.getMinecraftProvider().file("minecraft-details.json");
+			Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-			loom.download(detailsUrl).downloadPath(detailsCache.toPath());
+			loom.download(detailsUrl).downloadPath(detailsCache);
 
 			try (BufferedReader _br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
 				VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
