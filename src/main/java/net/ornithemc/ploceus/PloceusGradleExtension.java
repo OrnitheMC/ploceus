@@ -1,13 +1,22 @@
 package net.ornithemc.ploceus;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.Path;
 import java.util.Map;
 
 import org.gradle.api.Project;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.configuration.DependencyInfo;
 
+import net.ornithemc.ploceus.manifest.Manifest;
+import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
@@ -17,6 +26,8 @@ import net.ornithemc.ploceus.nester.NestsProvider;
 
 public class PloceusGradleExtension {
 
+	private static final Gson GSON = new GsonBuilder().create();
+
 	public static PloceusGradleExtension get(Project project) {
 		return (PloceusGradleExtension)project.getExtensions().getByName("ploceus");
 	}
@@ -24,11 +35,13 @@ public class PloceusGradleExtension {
 	private final Project project;
 	private final LoomGradleExtension loom;
 	private final OslVersionCache oslVersions;
+	private final CommonLibraries commonLibraries;
 
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
 		this.loom = LoomGradleExtension.get(this.project);
 		this.oslVersions = new OslVersionCache(this.project);
+		this.commonLibraries = new CommonLibraries(this.project, this);
 
 		apply();
 	}
@@ -132,6 +145,10 @@ public class PloceusGradleExtension {
 			version));
 	}
 
+	public void addCommonLibraries(String configuration) {
+		commonLibraries.addDependencies(configuration);
+	}
+
 	public void clientOnlyMappings() {
 		setIntermediaryProvider(GameSide.CLIENT);
 	}
@@ -146,5 +163,32 @@ public class PloceusGradleExtension {
 		loom.setIntermediateMappingsProvider(SidedIntermediaryMappingsProvider.class, provider -> {
 			provider.configure(project, loom, side);
 		});
+	}
+
+	public String normalizedMinecraftVersion() {
+		// the normalized version id can be parsed from the version details file
+
+		String versionId = loom.getMinecraftProvider().minecraftVersion();
+
+		Path userCache = loom.getFiles().getUserCache().toPath();
+		Path manifestCache = userCache.resolve("version_manifest.json");
+
+		try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
+			Manifest manifest = GSON.fromJson(br, Manifest.class);
+			Manifest.Version version = manifest.getVersion(versionId);
+
+			String detailsUrl = version.details();
+			File detailsCache = loom.getMinecraftProvider().file("minecraft-details.json");
+
+			loom.download(detailsUrl).downloadPath(detailsCache.toPath());
+
+			try (BufferedReader _br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
+				VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
+				return details.normalizedVersion();
+			}
+		} catch (Exception e) {
+			project.getLogger().warn("unable to read version details, cannot normalize minecraft version id");
+			return versionId;
+		}
 	}
 }
