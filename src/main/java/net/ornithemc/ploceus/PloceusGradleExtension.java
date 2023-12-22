@@ -145,6 +145,10 @@ public class PloceusGradleExtension {
 			version));
 	}
 
+	public void addCommonLibraries() {
+		addCommonLibraries("implementation");
+	}
+
 	public void addCommonLibraries(String configuration) {
 		commonLibraries.addDependencies(configuration);
 	}
