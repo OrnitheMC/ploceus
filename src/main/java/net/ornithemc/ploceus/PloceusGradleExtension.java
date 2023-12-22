@@ -177,7 +177,7 @@ public class PloceusGradleExtension {
 
 			loom.download(detailsUrl).downloadPath(detailsCache);
 
-			try (BufferedReader _br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
+			try (BufferedReader _br = new BufferedReader(new FileReader(detailsCache.toFile()))) {
 				VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
 				return details.normalizedVersion();
 			}
