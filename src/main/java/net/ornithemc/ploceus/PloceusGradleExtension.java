@@ -93,6 +93,10 @@ public class PloceusGradleExtension {
 	}
 
 	public void dependOsl(String version, GameSide side) throws Exception {
+		dependOsl("modImplementation", version, side);
+	}
+
+	public void dependOsl(String configuration, String version, GameSide side) throws Exception {
 		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
 			String module = entry.getKey();
 			String baseVersion = entry.getValue();
@@ -102,7 +106,7 @@ public class PloceusGradleExtension {
 			// so check if a valid module version exists for
 			// this Minecraft version before adding the dependency
 			if (moduleVersion != null) {
-				addOslModuleDependency(module, moduleVersion);
+				addOslModuleDependency(configuration, module, moduleVersion);
 			}
 		}
 	}
@@ -116,7 +120,11 @@ public class PloceusGradleExtension {
 	}
 
 	public void dependOslModule(String module, String version, GameSide side) throws Exception {
-		addOslModuleDependency(module, oslModule(module, version, side));
+		dependOslModule("modImplementation", module, version, side);
+	}
+
+	public void dependOslModule(String configuration, String module, String version, GameSide side) throws Exception {
+		addOslModuleDependency(configuration, module, oslModule(module, version, side));
 	}
 
 	public String oslModule(String module, String version) throws Exception {
@@ -137,8 +145,8 @@ public class PloceusGradleExtension {
 		return moduleVersion;
 	}
 
-	private void addOslModuleDependency(String module, String version) {
-		project.getDependencies().add("modImplementation", String.format("%s:%s:%s",
+	private void addOslModuleDependency(String configuration, String module, String version) {
+		project.getDependencies().add(configuration, String.format("%s:%s:%s",
 			Constants.OSL_MAVEN_GROUP,
 			module,
 			version));
