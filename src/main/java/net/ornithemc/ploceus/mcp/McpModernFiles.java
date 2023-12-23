@@ -21,53 +21,49 @@ public class McpModernFiles extends McpFiles {
 
 	@Override
 	public InputStream readSrg() throws IOException {
-		try (ZipFile zip = new ZipFile(srgFile.toFile())) {
-			ZipEntry srg = zip.getEntry("joined.srg");
+		ZipFile zip = new ZipFile(srgFile.toFile());
+		ZipEntry srg = zip.getEntry("joined.srg");
 
-			if (srg == null) {
-				throw new FileNotFoundException("srg mappings are missing!");
-			}
-
-			return zip.getInputStream(srg);
+		if (srg == null) {
+			throw new FileNotFoundException("srg mappings are missing!");
 		}
+
+		return zip.getInputStream(srg);
 	}
 
 	@Override
 	public InputStream readFields() throws IOException {
-		try (ZipFile zip = new ZipFile(mcpFile.toFile())) {
-			ZipEntry fields = zip.getEntry("fields.csv");
+		ZipFile zip = new ZipFile(mcpFile.toFile());
+		ZipEntry fields = zip.getEntry("fields.csv");
 
-			if (fields == null) {
-				throw new FileNotFoundException("field mappings are missing!");
-			}
-
-			return zip.getInputStream(fields);
+		if (fields == null) {
+			throw new FileNotFoundException("field mappings are missing!");
 		}
+
+		return zip.getInputStream(fields);
 	}
 
 	@Override
 	public InputStream readMethods() throws IOException {
-		try (ZipFile zip = new ZipFile(mcpFile.toFile())) {
-			ZipEntry fields = zip.getEntry("methods.csv");
+		ZipFile zip = new ZipFile(mcpFile.toFile());
+		ZipEntry fields = zip.getEntry("methods.csv");
 
-			if (fields == null) {
-				throw new FileNotFoundException("method mappings are missing!");
-			}
-
-			return zip.getInputStream(fields);
+		if (fields == null) {
+			throw new FileNotFoundException("method mappings are missing!");
 		}
+
+		return zip.getInputStream(fields);
 	}
 
 	@Override
 	public InputStream readParams() throws IOException {
-		try (ZipFile zip = new ZipFile(mcpFile.toFile())) {
-			ZipEntry params = zip.getEntry("params.csv");
+		ZipFile zip = new ZipFile(mcpFile.toFile());
+		ZipEntry params = zip.getEntry("params.csv");
 
-			if (params == null) {
-				throw new FileNotFoundException("parameter mappings are missing!");
-			}
-
-			return zip.getInputStream(params);
+		if (params == null) {
+			throw new FileNotFoundException("parameter mappings are missing!");
 		}
+
+		return zip.getInputStream(params);
 	}
 }

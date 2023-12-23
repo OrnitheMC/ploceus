@@ -16,15 +16,14 @@ public abstract class McpFiles {
 	}
 
 	public InputStream readIntermediary() throws IOException {
-		try (ZipFile zip = new ZipFile(intermediaryFile.toFile())) {
-			ZipEntry intermediary = zip.getEntry("mappings/mappings.tiny");
+		ZipFile zip = new ZipFile(intermediaryFile.toFile());
+		ZipEntry intermediary = zip.getEntry("mappings/mappings.tiny");
 
-			if (intermediary == null) {
-				throw new FileNotFoundException("intermediary mappings are missing!");
-			}
-
-			return zip.getInputStream(intermediary);
+		if (intermediary == null) {
+			throw new FileNotFoundException("intermediary mappings are missing!");
 		}
+
+		return zip.getInputStream(intermediary);
 	}
 
 	public abstract InputStream readSrg() throws IOException;
