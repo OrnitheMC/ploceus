@@ -27,6 +27,7 @@ public class CommonLibraries {
 		this.libraries.add(new Library("1.5.2", "commons-io:commons-io:2.4"));
 		this.libraries.add(new Library("1.5.2", "org.apache.commons:commons-lang3:3.1"));
 		this.libraries.add(new Library("1.7.10", "commons-logging:commons-logging:1.1.3"));
+		this.libraries.add(new Library("1.7.9", "org.apache.httpcomponents:httpclient:4.3.3"));
 	}
 
 	public void addDependencies(String configuration) {
