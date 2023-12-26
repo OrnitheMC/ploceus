@@ -202,7 +202,7 @@ public class PloceusGradleExtension {
 				return details.normalizedVersion();
 			}
 		} catch (Exception e) {
-			project.getLogger().warn("unable to read version details, cannot normalize minecraft version id");
+			project.getLogger().warn("unable to read version details, cannot normalize minecraft version id", e);
 			return versionId;
 		}
 	}
