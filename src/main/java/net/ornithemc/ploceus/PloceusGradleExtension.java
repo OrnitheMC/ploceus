@@ -168,18 +168,22 @@ public class PloceusGradleExtension {
 		Path userCache = loom.getFiles().getUserCache().toPath();
 		Path manifestCache = userCache.resolve("version_manifest.json");
 
-		try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
-			Manifest manifest = GSON.fromJson(br, Manifest.class);
-			Manifest.Version version = manifest.getVersion(versionId);
+		try {
+			loom.download(Constants.VERSION_MANIFEST_URL).downloadPath(manifestCache);
 
-			String detailsUrl = version.details();
-			Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
+			try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
+				Manifest manifest = GSON.fromJson(br, Manifest.class);
+				Manifest.Version version = manifest.getVersion(versionId);
 
-			loom.download(detailsUrl).downloadPath(detailsCache);
+				String detailsUrl = version.details();
+				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-			try (BufferedReader _br = new BufferedReader(new FileReader(detailsCache.toFile()))) {
-				VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
-				return details.normalizedVersion();
+				loom.download(detailsUrl).downloadPath(detailsCache);
+
+				try (BufferedReader _br = new BufferedReader(new FileReader(detailsCache.toFile()))) {
+					VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
+					return details.normalizedVersion();
+				}
 			}
 		} catch (Exception e) {
 			project.getLogger().warn("unable to read version details, cannot normalize minecraft version id", e);
