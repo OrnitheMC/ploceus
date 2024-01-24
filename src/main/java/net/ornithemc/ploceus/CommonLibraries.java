@@ -18,7 +18,11 @@ public class CommonLibraries {
 		this.ploceus = ploceus;
 		this.libraries = new LinkedHashSet<>();
 
-		this.libraries.add(Library.upTo("1.6.4", "org.apache.logging.log4j:log4j-api:2.19.0", "org.apache.logging.log4j:log4j-core:2.19.0"));
+		// the slf4j binding for log4j - this version has been tested to work on 1.6, 1.11, 1.12
+		// lower versions of mc not tested because they did not yet ship log4j
+		// this library will ship slf4j api, log4j api and log4j core so we do not need to specify those separately
+		this.libraries.add(Library.all("org.apache.logging.log4j:log4j-slf4j-impl:2.8.1"));
+
 		this.libraries.add(Library.upTo("1.5.2", "com.google.code.gson:gson:2.2.2"));
 		this.libraries.add(Library.upTo("1.5.2", "com.google.guava:guava:14.0"));
 		this.libraries.add(Library.upTo("1.11.2", "it.unimi.dsi:fastutil:8.5.9"));
