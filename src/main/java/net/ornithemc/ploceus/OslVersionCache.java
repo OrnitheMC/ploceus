@@ -198,7 +198,7 @@ public class OslVersionCache {
 			// be written to disk
 		}
 
-		JsonArray versionsJson = moduleJson.getAsJsonArray(mcVersion);
+		JsonArray versionsJson = moduleJson.getAsJsonArray(version);
 
 		if (versionsJson == null) {
 			String metaUrl = String.format(Constants.META_URL + Constants.OSL_MODULE_META_ENDPOINT,
