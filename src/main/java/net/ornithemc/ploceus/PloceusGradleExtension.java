@@ -2,6 +2,7 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -13,7 +14,6 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.configuration.DependencyInfo;
-
 import net.ornithemc.ploceus.manifest.Manifest;
 import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
@@ -189,7 +189,9 @@ public class PloceusGradleExtension {
 		Path manifestCache = userCache.resolve("version_manifest.json");
 
 		try {
-			loom.download(Constants.VERSION_MANIFEST_URL).downloadPath(manifestCache);
+			if (!Files.exists(manifestCache)) {
+				loom.download(Constants.VERSION_MANIFEST_URL).downloadPath(manifestCache);
+			}
 
 			try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
 				Manifest manifest = GSON.fromJson(br, Manifest.class);
@@ -198,7 +200,9 @@ public class PloceusGradleExtension {
 				String detailsUrl = version.details();
 				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-				loom.download(detailsUrl).downloadPath(detailsCache);
+				if (!Files.exists(detailsCache)) {
+					loom.download(detailsUrl).downloadPath(detailsCache);
+				}
 
 				try (BufferedReader _br = new BufferedReader(new FileReader(detailsCache.toFile()))) {
 					VersionDetails details = GSON.fromJson(_br, VersionDetails.class);
