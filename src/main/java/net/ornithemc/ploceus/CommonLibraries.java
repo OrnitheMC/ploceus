@@ -20,8 +20,8 @@ public class CommonLibraries {
 
 		// the slf4j binding for log4j - this version has been tested to work on 1.6, 1.11, 1.12
 		// lower versions of mc not tested because they did not yet ship log4j to begin with
-		this.libraries.add(Library.all("org.slf4j:slf4j-api:2.0.11"));
-		this.libraries.add(Library.all("org.apache.logging.log4j:log4j-slf4j2-impl:2.22.1"));
+		this.libraries.add(Library.all("org.slf4j:slf4j-api:2.0.1"));
+		this.libraries.add(Library.all("org.apache.logging.log4j:log4j-slf4j2-impl:2.19.0"));
 		this.libraries.add(Library.all("org.apache.logging.log4j:log4j-api:2.19.0", "org.apache.logging.log4j:log4j-core:2.19.0"));
 		this.libraries.add(Library.all("it.unimi.dsi:fastutil:8.5.9"));
 		this.libraries.add(Library.all("com.google.code.gson:gson:2.10"));
