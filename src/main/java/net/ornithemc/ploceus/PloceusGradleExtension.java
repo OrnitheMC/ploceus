@@ -186,7 +186,7 @@ public class PloceusGradleExtension {
 		String versionId = minecraftVersion();
 
 		Path userCache = loom.getFiles().getUserCache().toPath();
-		Path manifestCache = userCache.resolve("version_manifest.json");
+		Path manifestCache = userCache.resolve("skyrising_version_manifest.json");
 
 		try {
 			if (!Files.exists(manifestCache)) {
