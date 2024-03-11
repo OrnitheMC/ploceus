@@ -63,8 +63,6 @@ public class OslVersionCache {
 		}
 
 		modules = new HashMap<>();
-		dependencies.put(version, modules);
-
 		JsonArray modulesJson = queryOslModules(version);
 
 		for (JsonElement moduleJson : modulesJson) {
@@ -74,6 +72,14 @@ public class OslVersionCache {
 			String moduleVersion = moduleJsonObj.get("version").getAsString();
 
 			modules.put(moduleName, moduleVersion);
+		}
+
+		// add this entry to the map only after the meta queries
+		// if they fail, we might add an empty map which is invalid
+		if (modules.isEmpty()) {
+			throw new RuntimeException("no OSL modules found for OSL " + version);
+		} else {
+			dependencies.put(version, modules);
 		}
 
 		return Collections.unmodifiableMap(modules);
