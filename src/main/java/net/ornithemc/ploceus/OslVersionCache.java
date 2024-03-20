@@ -22,6 +22,8 @@ import com.google.gson.JsonObject;
 
 import net.fabricmc.loom.LoomGradleExtension;
 
+import net.ornithemc.ploceus.api.GameSide;
+
 public class OslVersionCache {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

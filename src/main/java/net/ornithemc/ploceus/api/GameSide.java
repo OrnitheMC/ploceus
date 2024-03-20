@@ -1,4 +1,4 @@
-package net.ornithemc.ploceus;
+package net.ornithemc.ploceus.api;
 
 import java.util.NoSuchElementException;
 

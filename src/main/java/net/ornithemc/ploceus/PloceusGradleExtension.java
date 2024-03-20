@@ -14,6 +14,9 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.configuration.DependencyInfo;
+
+import net.ornithemc.ploceus.api.GameSide;
+import net.ornithemc.ploceus.api.PloceusGradleExtensionApi;
 import net.ornithemc.ploceus.manifest.Manifest;
 import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.mappings.SidedIntermediaryMappingsProvider;
@@ -23,7 +26,7 @@ import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
 
-public class PloceusGradleExtension {
+public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private static final Gson GSON = new GsonBuilder().create();
 
@@ -57,14 +60,17 @@ public class PloceusGradleExtension {
 		return NestsProvider.of(project);
 	}
 
+	@Override
 	public NestedMappingsSpec nestedMappings() {
 		return new NestedMappingsSpec(this);
 	}
 
+	@Override
 	public McpModernMappingsSpec mcpMappings(String channel, String build) {
 		return mcpMappings(channel, DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion(), build);
 	}
 
+	@Override
 	public McpModernMappingsSpec mcpMappings(String channel, String mc, String build) {
 		return new McpModernMappingsSpec(
 			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_INTERMEDIARY_MAPPINGS, mc)),
@@ -73,10 +79,12 @@ public class PloceusGradleExtension {
 		);
 	}
 
+	@Override
 	public McpForgeMappingsSpec mcpForgeMappings(String version) {
 		return mcpForgeMappings(DependencyInfo.create(project, Constants.MINECRAFT_CONFIGURATION).getDependency().getVersion(), version);
 	}
 
+	@Override
 	public McpForgeMappingsSpec mcpForgeMappings(String mc, String version) {
 		return new McpForgeMappingsSpec(
 			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_INTERMEDIARY_MAPPINGS, mc)),
@@ -84,18 +92,22 @@ public class PloceusGradleExtension {
 		);
 	}
 
+	@Override
 	public void dependOsl(String version) throws Exception {
 		dependOsl(version, GameSide.MERGED);
 	}
 
+	@Override
 	public void dependOsl(String version, String side) throws Exception {
 		dependOsl(version, GameSide.of(side));
 	}
 
+	@Override
 	public void dependOsl(String version, GameSide side) throws Exception {
 		dependOsl("modImplementation", version, side);
 	}
 
+	@Override
 	public void dependOsl(String configuration, String version, GameSide side) throws Exception {
 		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
 			String module = entry.getKey();
@@ -111,30 +123,37 @@ public class PloceusGradleExtension {
 		}
 	}
 
+	@Override
 	public void dependOslModule(String module, String version) throws Exception {
 		dependOslModule(module, version, GameSide.MERGED);
 	}
 
+	@Override
 	public void dependOslModule(String module, String version, String side) throws Exception {
 		dependOslModule(module, version, GameSide.of(side));
 	}
 
+	@Override
 	public void dependOslModule(String module, String version, GameSide side) throws Exception {
 		dependOslModule("modImplementation", module, version, side);
 	}
 
+	@Override
 	public void dependOslModule(String configuration, String module, String version, GameSide side) throws Exception {
 		addOslModuleDependency(configuration, module, oslModule(module, version, side));
 	}
 
+	@Override
 	public String oslModule(String module, String version) throws Exception {
 		return oslModule(module, version, GameSide.MERGED);
 	}
 
+	@Override
 	public String oslModule(String module, String version, String side) throws Exception {
 		return oslModule(module, version, GameSide.of(side));
 	}
 
+	@Override
 	public String oslModule(String module, String version, GameSide side) throws Exception {
 		String moduleVersion = oslVersions.getVersion(module, version, side);
 
@@ -152,18 +171,22 @@ public class PloceusGradleExtension {
 			version));
 	}
 
+	@Override
 	public void addCommonLibraries() {
 		addCommonLibraries("implementation");
 	}
 
+	@Override
 	public void addCommonLibraries(String configuration) {
 		commonLibraries.addDependencies(configuration);
 	}
 
+	@Override
 	public void clientOnlyMappings() {
 		setIntermediaryProvider(GameSide.CLIENT);
 	}
 
+	@Override
 	public void serverOnlyMappings() {
 		setIntermediaryProvider(GameSide.SERVER);
 	}

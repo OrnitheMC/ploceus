@@ -7,7 +7,7 @@ import org.gradle.api.Project;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.mappings.IntermediaryMappingsProvider;
 
-import net.ornithemc.ploceus.GameSide;
+import net.ornithemc.ploceus.api.GameSide;
 
 public abstract class SidedIntermediaryMappingsProvider extends IntermediaryMappingsProvider {
 
