@@ -16,8 +16,10 @@ public class Constants {
 	public static final String VERSION_MANIFEST_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
 
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = "net.ornithemc";
-	public static final String CALAMUS_INTERMEDIARY_MAPPINGS = "calamus-intermediary:%s";
-	public static final String CALAMUS_INTERMEDIARY_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s/calamus-intermediary-%1$s-v2.jar";
+	public static final String LEGACY_CALAMUS_MAPPINGS = "calamus-intermediary:%s";
+	public static final String LEGACY_CALAMUS_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s%s/calamus-intermediary-%1$s%s-v2.jar";
+	public static final String VERSIONED_CALAMUS_MAPPINGS = "calamus-intermediary:%s";
+	public static final String VERSIONED_CALAMUS_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary-gen-%s/%1$s/calamus-intermediary-gen-%s-%1$s-v2.jar";
 
 	public static final String OSL_MAVEN_GROUP = "net.ornithemc.osl";
 	public static final String OSL_CORE = "core";

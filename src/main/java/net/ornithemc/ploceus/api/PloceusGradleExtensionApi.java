@@ -1,5 +1,7 @@
 package net.ornithemc.ploceus.api;
 
+import org.gradle.api.provider.Property;
+
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NestedMappingsSpec;
@@ -42,8 +44,12 @@ public interface PloceusGradleExtensionApi {
 
 	void addCommonLibraries(String configuration);
 
+	@Deprecated
 	void clientOnlyMappings();
 
+	@Deprecated
 	void serverOnlyMappings();
+
+	Property<Integer> getGeneration();
 
 }
