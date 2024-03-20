@@ -24,7 +24,6 @@ import net.ornithemc.ploceus.mappings.LegacyCalamusProvider;
 import net.ornithemc.ploceus.mappings.VersionedCalamusProvider;
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
-import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
 
@@ -40,6 +39,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final LoomGradleExtension loom;
 	private final OslVersionCache oslVersions;
 	private final CommonLibraries commonLibraries;
+	private final Property<NestsProvider> nestsProvider;
 	private final Property<GameSide> side; // gen 1
 	private final Property<Integer> generation; // gen 2+
 
@@ -48,6 +48,21 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.loom = LoomGradleExtension.get(this.project);
 		this.oslVersions = new OslVersionCache(this.project, this);
 		this.commonLibraries = new CommonLibraries(this.project, this);
+		this.nestsProvider = project.getObjects().property(NestsProvider.class);
+		this.nestsProvider.convention(project.provider(() -> {
+			int generation = getGeneration().get();
+
+			NestsProvider provider;
+			if (generation > 1 && loom.getMinecraftProvider().isLegacyVersion()) {
+				provider = new NestsProvider.Split(project, loom, this);
+			} else {
+				provider = new NestsProvider.Simple(project, loom, this);
+			}
+			provider.provide();
+
+			return provider;
+		}));
+		this.nestsProvider.finalizeValueOnRead();
 		this.side = project.getObjects().property(GameSide.class);
 		this.side.convention(GameSide.MERGED);
 		this.generation = project.getObjects().property(int.class);
@@ -58,6 +73,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private void apply() {
 		project.getConfigurations().register(Constants.NESTS_CONFIGURATION);
+		project.getConfigurations().register(Constants.CLIENT_NESTS_CONFIGURATION);
+		project.getConfigurations().register(Constants.SERVER_NESTS_CONFIGURATION);
 		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
 		loom.setIntermediateMappingsProvider(VersionedCalamusProvider.class, provider -> {
@@ -73,12 +90,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	public NestsProvider getNestsProvider() {
-		return NestsProvider.of(project);
-	}
-
-	@Override
-	public NestedMappingsSpec nestedMappings() {
-		return new NestedMappingsSpec(this);
+		return nestsProvider.get();
 	}
 
 	@Override
@@ -210,6 +222,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	private void legacyCalamusProvider() {
+		generation.set(1);
 		loom.setIntermediateMappingsProvider(LegacyCalamusProvider.class, provider -> {
 			provider.getSide()
 				.convention(side)

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.gradle.api.Project;
@@ -15,150 +16,192 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.FileSystemUtil;
-
 import net.fabricmc.mappingio.tree.MappingTree;
-import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
-import net.fabricmc.mappingio.tree.MappingTree.MethodMapping;
 
 import net.ornithemc.nester.nest.Nest;
-import net.ornithemc.nester.nest.NestType;
-import net.ornithemc.nester.nest.NesterIo;
 import net.ornithemc.nester.nest.Nests;
-
 import net.ornithemc.ploceus.Constants;
+import net.ornithemc.ploceus.PloceusGradleExtension;
 
 public class NestsProvider {
 
-	public static NestsProvider of(Project project) {
-		return new NestsProvider(project);
-	}
+	final Project project;
+	final LoomGradleExtension loom;
+	final PloceusGradleExtension ploceus;
+	final String configuration;
+	final MappingsNamespace sourceNamespace;
+	final MappingsNamespace targetNamespace;
 
-	private final Project project;
+	Path nestsPath;
+	Nests nests;
+	Nests mappedNests;
 
-	private Path path;
-	private Nests nests;
-
-	private NestsProvider(Project project) {
+	private NestsProvider(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus, String configuration, MappingsNamespace sourceNamespace, MappingsNamespace targetNamespace) {
 		this.project = project;
+		this.loom = loom;
+		this.ploceus = ploceus;
+		this.configuration = configuration;
+		this.sourceNamespace = sourceNamespace;
+		this.targetNamespace = targetNamespace;
 	}
 
-	public boolean provide() {
-		path = null;
-		nests = null;
+	@Override
+	public int hashCode() {
+		return nestsPath.hashCode();
+	}
 
-		Configuration conf = project.getConfigurations().getByName(Constants.NESTS_CONFIGURATION);
+	public void provide() {
+		Configuration conf = project.getConfigurations().getByName(configuration);
 
 		if (conf.getDependencies().isEmpty()) {
-			return false;
+			return;
 		}
 
-		LoomGradleExtension loom = LoomGradleExtension.get(project);
+		DependencyInfo dependency = DependencyInfo.create(project, configuration);
+		String nestsVersion = dependency.getResolvedVersion();
+		Optional<File> nestsJar = dependency.resolveFile();
+
+		if (!nestsJar.isPresent()) {
+			return;
+		}
+
 		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		DependencyInfo dependency = DependencyInfo.create(project, Constants.NESTS_CONFIGURATION);
+		Path path = minecraft.path(nestsVersion + ".nest");
 
-		String version = dependency.getResolvedVersion();
-		Optional<File> jar = dependency.resolveFile();
-
-		if (!jar.isPresent()) {
-			return false;
-		}
-
-		Path jarPath = jar.get().toPath();
-		File nestsFile = minecraft.file(version + ".nest");
-		Path nestsPath = nestsFile.toPath();
-
-		if (Files.notExists(nestsPath) || minecraft.refreshDeps()) {
-			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(jarPath)) {
-				Files.copy(delegate.getPath("nests/mappings.nest"), nestsPath, StandardCopyOption.REPLACE_EXISTING);
+		if (Files.notExists(path) || minecraft.refreshDeps()) {
+			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(nestsJar.get().toPath())) {
+				Files.copy(delegate.getPath("nests/mappings.nest"), path, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new RuntimeException("unable to extract nests!");
 			}
 		}
 
-		path = nestsPath;
-
-		return true;
+		nestsPath = path;
 	}
 
-	public Path path() {
-		return path;
+	public boolean isPresent() {
+		return nestsPath != null;
 	}
 
-	public Nests get() {
-		if (path != null && nests == null) {
-			NesterIo.read(nests = Nests.empty(), path);
+	public Nests get(MappingTree mappings, boolean mapped) {
+		if (isPresent()) {
+			if (nests == null) {
+				nests = Nests.of(nestsPath);
+			}
+			if (mapped && mappedNests == null) {
+				mappedNests = new NestsMapper(mappings).apply(nests, sourceNamespace, targetNamespace);
+			}
 		}
 
-		return nests;
+		return mapped ? mappedNests : nests;
 	}
 
-	public Nests map(MappingTree mappings) {
-		return path == null ? null : NestsMapper.apply(mappings, get());
+	public static class Simple extends NestsProvider {
+
+		public Simple(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
+			super(project, loom, ploceus, Constants.NESTS_CONFIGURATION, MappingsNamespace.OFFICIAL, MappingsNamespace.NAMED);
+		}
 	}
 
-	private static class NestsMapper {
+	public static class Split extends NestsProvider {
 
-		public static Nests apply(MappingTree mappings, Nests nests) {
-			return new NestsMapper(mappings, nests).apply();
+		private final NestsProvider client;
+		private final NestsProvider server;
+
+		public Split(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
+			super(project, loom, ploceus, null, MappingsNamespace.INTERMEDIARY, MappingsNamespace.NAMED);
+
+			this.client = new NestsProvider(project, loom, ploceus, Constants.CLIENT_NESTS_CONFIGURATION, MappingsNamespace.CLIENT_OFFICIAL, MappingsNamespace.INTERMEDIARY);
+			this.server = new NestsProvider(project, loom, ploceus, Constants.SERVER_NESTS_CONFIGURATION, MappingsNamespace.SERVER_OFFICIAL, MappingsNamespace.INTERMEDIARY);
 		}
 
-		private final MappingTree mappings;
-		private final Nests nests;
-		private final Nests mappedNests;
-		private final int nsid;
-
-		public NestsMapper(MappingTree mappings, Nests nests) {
-			this.mappings = mappings;
-			this.nests = nests;
-			this.mappedNests = Nests.empty();
-			this.nsid = this.mappings.getNamespaceId(MappingsNamespace.NAMED.toString());
+		@Override
+		public int hashCode() {
+			return Objects.hash(client, server);
 		}
 
-		public Nests apply() {
-			for (Nest nest : nests) {
-				NestType type = nest.type;
-				String className = mapClassName(nest.className);
-				String enclClassName = mapOuterName(nest.className, nest.enclClassName);
-				String enclMethodName = (nest.enclMethodName == null) ? null : mapMethodName(nest.enclClassName, nest.enclMethodName, nest.enclMethodDesc);
-				String enclMethodDesc = (nest.enclMethodName == null) ? null : mapMethodDesc(nest.enclClassName, nest.enclMethodName, nest.enclMethodDesc);
-				String innerName = mapInnerName(nest.className, nest.innerName);
-				int access = nest.access;
+		@Override
+		public void provide() {
+			client.provide();
+			server.provide();
+		}
 
-				mappedNests.add(new Nest(type, className, enclClassName, enclMethodName, enclMethodDesc, innerName, access));
+		@Override
+		public boolean isPresent() {
+			return client.isPresent() || server.isPresent();
+		}
+
+		public Nests get(MappingTree mappings, boolean mapped) {
+			if (isPresent()) {
+				if (nests == null) {
+					Nests clientNests = client.get(mappings, true);
+					Nests serverNests = server.get(mappings, true);
+
+					nests = mergeNests(clientNests, serverNests);
+				}
+				if (mapped && mappedNests == null) {
+					mappedNests = new NestsMapper(mappings).apply(nests, sourceNamespace, targetNamespace);
+				}
 			}
 
-			return mappedNests;
+			return mapped ? mappedNests : nests;
 		}
 
-		private String mapClassName(String name) {
-			ClassMapping c = mappings.getClass(name);
-			return (c == null) ? name : c.getName(nsid);
+		private Nests mergeNests(Nests client, Nests server) {
+			Nests merged = Nests.empty();
+
+			for (Nest c : client) {
+				Nest s = server.get(c.className);
+
+				if (s == null) {
+					// client only nest - we can add it to merged as is
+					merged.add(c);
+				} else {
+					// nest is present on both sides - check that they match
+					if (nestsMatch(c, s)) {
+						merged.add(c);
+					}
+				}
+			}
+			for (Nest s : server) {
+				Nest c = client.get(s.className);
+
+				if (c == null) {
+					// server only nest - we can add it to merged as is
+					merged.add(s);
+				} else {
+					// nest is present on both sides - already added to merged
+				}
+			}
+
+			return merged;
 		}
 
-		private String mapMethodName(String className, String name, String desc) {
-			MethodMapping m = mappings.getMethod(className, name, desc);
-			return (m == null) ? name : m.getName(nsid);
+		private boolean nestsMatch(Nest c, Nest s) {
+			if (c.type != s.type) {
+				throw cannotMerge(c, s, "type does not match");
+			}
+			if (!Objects.equals(c.enclClassName, s.enclClassName)) {
+				throw cannotMerge(c, s, "enclosing class name does not match");
+			}
+			if (!Objects.equals(c.enclMethodName, s.enclMethodName)) {
+				throw cannotMerge(c, s, "enclosing method name does not match");
+			}
+			if (!Objects.equals(c.enclMethodDesc, s.enclMethodDesc)) {
+				throw cannotMerge(c, s, "enclosing method descriptor does not match");
+			}
+			if (!Objects.equals(c.innerName, s.innerName)) {
+				throw cannotMerge(c, s, "inner name does not match");
+			}
+			if (c.access != s.access) {
+				throw cannotMerge(c, s, "access flags does not match");
+			}
+
+			return true;
 		}
 
-		private String mapMethodDesc(String className, String name, String desc) {
-			MethodMapping m = mappings.getMethod(className, name, desc);
-			return (m == null) ? name : m.getDesc(nsid);
-		}
-
-		private String mapOuterName(String className, String enclClassName) {
-			String mappedClassName = mapClassName(className);
-			int idx = mappedClassName.lastIndexOf('$');
-
-			// provided mappings already apply nesting
-			return mappedClassName.substring(0, idx);
-		}
-
-		private String mapInnerName(String className, String innerName) {
-			String mappedClassName = mapClassName(className);
-			int idx = mappedClassName.lastIndexOf('$');
-
-			// provided mappings already apply nesting
-			return mappedClassName.substring(idx + 1);
+		private RuntimeException cannotMerge(Nest  c, Nest s, String reason) {
+			return new IllegalStateException("cannot merge client nest " + c.className + " with server nest " + s.className + ": " + reason);
 		}
 	}
 }

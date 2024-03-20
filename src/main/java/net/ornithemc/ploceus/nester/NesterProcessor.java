@@ -1,6 +1,7 @@
 package net.ornithemc.ploceus.nester;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -10,7 +11,6 @@ import javax.inject.Inject;
 import net.fabricmc.loom.api.processor.MinecraftJarProcessor;
 import net.fabricmc.loom.api.processor.ProcessorContext;
 import net.fabricmc.loom.api.processor.SpecContext;
-
 import net.fabricmc.mappingio.tree.MappingTree;
 
 import net.ornithemc.nester.Nester;
@@ -34,14 +34,33 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 	@Override
 	public Spec buildSpec(SpecContext context) {
 		NestsProvider nests = ploceus.getNestsProvider();
-		return nests.provide() ? new Spec(nests) : null;
+		return nests.isPresent() ? new Spec(nests) : null;
+	}
+
+	@Override
+	public MappingsProcessor<Spec> processMappings() {
+		return (mappings, spec, context) -> {
+			NestsProvider nests = ploceus.getNestsProvider();
+
+			if (nests.isPresent()) {
+				try {
+					new MappingsNester(mappings, nests.get(mappings, false)).apply(mappings);
+				} catch (IOException e) {
+					throw new UncheckedIOException("unable to apply nests to mappings", e);
+				}
+
+				return true;
+			}
+
+			return false;
+		};
 	}
 
 	@Override
 	public void processJar(Path jar, Spec spec, ProcessorContext ctx) throws IOException {
 		try {
 			MappingTree mappings = ctx.getMappings();
-			Nests nests = spec.nests.map(mappings);
+			Nests nests = ploceus.getNestsProvider().get(mappings, true);
 
 			Path tmp = Files.createTempFile("tmp", ".jar");
 
@@ -70,7 +89,7 @@ public class NesterProcessor implements MinecraftJarProcessor<NesterProcessor.Sp
 		@Override
 		public int hashCode() {
 			if (hashCode == null) {
-				hashCode = nests.get().hashCode();
+				hashCode = nests.hashCode();
 			}
 
 			return hashCode;

@@ -11,6 +11,8 @@ public class Constants {
 
 	public static final String MINECRAFT_CONFIGURATION = "minecraft";
 	public static final String NESTS_CONFIGURATION = "nests";
+	public static final String CLIENT_NESTS_CONFIGURATION = "clientNests";
+	public static final String SERVER_NESTS_CONFIGURATION = "serverNests";
 
 	public static final String VERSION_MANIFEST_PROPERTY = "loom_version_manifests";
 	public static final String VERSION_MANIFEST_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";

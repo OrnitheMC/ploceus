@@ -4,11 +4,8 @@ import org.gradle.api.provider.Property;
 
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
-import net.ornithemc.ploceus.nester.NestedMappingsSpec;
 
 public interface PloceusGradleExtensionApi {
-
-	NestedMappingsSpec nestedMappings();
 
 	McpModernMappingsSpec mcpMappings(String channel, String build);
 
