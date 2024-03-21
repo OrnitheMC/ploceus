@@ -2,7 +2,7 @@ package net.ornithemc.ploceus.manifest;
 
 import java.util.List;
 
-public record Manifest(List<Version> versions) {
+public record VersionsManifest(List<Version> versions) {
 
 	public static record Version(String id, String details) {
 	}

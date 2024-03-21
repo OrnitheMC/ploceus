@@ -23,6 +23,9 @@ public class Constants {
 	public static final String VERSIONED_CALAMUS_MAPPINGS = "calamus-intermediary:%s";
 	public static final String VERSIONED_CALAMUS_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary-gen-%s/%1$s/calamus-intermediary-gen-%s-%1$s-v2.jar";
 
+	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
+	public static final String CALAMUS_GENERATION_ATTRIBUTE = "Calamus-Generation";
+
 	public static final String OSL_MAVEN_GROUP = "net.ornithemc.osl";
 	public static final String OSL_CORE = "core";
 

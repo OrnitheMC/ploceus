@@ -1,10 +1,16 @@
 package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import org.gradle.api.Project;
 import org.gradle.api.provider.Property;
@@ -15,11 +21,13 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.task.AbstractRemapJarTask;
+import net.fabricmc.loom.util.ZipUtils;
 
 import net.ornithemc.ploceus.api.GameSide;
 import net.ornithemc.ploceus.api.PloceusGradleExtensionApi;
-import net.ornithemc.ploceus.manifest.Manifest;
 import net.ornithemc.ploceus.manifest.VersionDetails;
+import net.ornithemc.ploceus.manifest.VersionsManifest;
 import net.ornithemc.ploceus.mappings.LegacyCalamusProvider;
 import net.ornithemc.ploceus.mappings.VersionedCalamusProvider;
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
@@ -87,6 +95,27 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
 		});
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
+
+		project.getTasks().configureEach(task -> {
+            if (task instanceof AbstractRemapJarTask remapJarTask) {
+                remapJarTask.doLast(task1 -> {
+                    try {
+                        ZipUtils.transform(remapJarTask.getArchiveFile().get().getAsFile().toPath(), Map.of(Constants.MANIFEST_PATH, bytes -> {
+                            Manifest manifest = new Manifest(new ByteArrayInputStream(bytes));
+
+                            Attributes attributes = manifest.getMainAttributes();
+                            attributes.putValue(Constants.CALAMUS_GENERATION_ATTRIBUTE, getGeneration().get().toString());
+
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            manifest.write(out);
+                            return out.toByteArray();
+                        }));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("unable to transform remapped jar manifest!", e);
+                    }
+                });
+            }
+        });
 	}
 
 	public NestsProvider getNestsProvider() {
@@ -257,8 +286,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			}
 
 			try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
-				Manifest manifest = GSON.fromJson(br, Manifest.class);
-				Manifest.Version version = manifest.getVersion(versionId);
+				VersionsManifest manifest = GSON.fromJson(br, VersionsManifest.class);
+				VersionsManifest.Version version = manifest.getVersion(versionId);
 
 				String detailsUrl = version.details();
 				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
