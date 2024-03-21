@@ -28,8 +28,8 @@ import net.ornithemc.ploceus.api.GameSide;
 import net.ornithemc.ploceus.api.PloceusGradleExtensionApi;
 import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.manifest.VersionsManifest;
-import net.ornithemc.ploceus.mappings.LegacyCalamusProvider;
-import net.ornithemc.ploceus.mappings.VersionedCalamusProvider;
+import net.ornithemc.ploceus.mappings.CalamusGen1Provider;
+import net.ornithemc.ploceus.mappings.CalamusGen2Provider;
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
@@ -74,7 +74,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.side = project.getObjects().property(GameSide.class);
 		this.side.convention(GameSide.MERGED);
 		this.generation = project.getObjects().property(int.class);
-		this.generation.convention(2);
+		this.generation.convention(1);
 
 		apply();
 	}
@@ -85,15 +85,6 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		project.getConfigurations().register(Constants.SERVER_NESTS_CONFIGURATION);
 		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
-		loom.setIntermediateMappingsProvider(VersionedCalamusProvider.class, provider -> {
-			provider.getGeneration()
-				.convention(getGeneration())
-				.finalizeValueOnRead();
-			provider.getIntermediaryUrl()
-				.convention(project.provider(() -> String.format(Constants.VERSIONED_CALAMUS_URL, provider.getGeneration().get(), provider.getGeneration().get())))
-				.finalizeValueOnRead();
-			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
-		});
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 
 		project.getTasks().configureEach(task -> {
@@ -116,6 +107,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
                 });
             }
         });
+
+		calamusGen1Provider();
 	}
 
 	public NestsProvider getNestsProvider() {
@@ -130,7 +123,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public McpModernMappingsSpec mcpMappings(String channel, String mc, String build) {
 		return new McpModernMappingsSpec(
-			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.LEGACY_CALAMUS_MAPPINGS, mc)),
+			getGeneration().get() == 1
+				? FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_GEN1_MAPPINGS, mc))
+				: FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_GEN2_MAPPINGS, getGeneration().get(), mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.SRG_MAPPINGS, mc)),
 			FileSpec.create(String.format(Constants.MCP_MAVEN_GROUP + ":" + Constants.MCP_MAPPINGS, channel, build, mc))
 		);
@@ -144,7 +139,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public McpForgeMappingsSpec mcpForgeMappings(String mc, String version) {
 		return new McpForgeMappingsSpec(
-			FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.LEGACY_CALAMUS_MAPPINGS, mc)),
+			getGeneration().get() == 1
+				? FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_GEN1_MAPPINGS, mc))
+				: FileSpec.create(String.format(Constants.CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":" + Constants.CALAMUS_GEN2_MAPPINGS, getGeneration().get(), mc)),
 			FileSpec.create(String.format(Constants.FORGE_MAVEN_GROUP+ ":" + Constants.FORGE_SRC, mc, version))
 		);
 	}
@@ -241,31 +238,50 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public void clientOnlyMappings() {
 		side.set(GameSide.CLIENT);
-		legacyCalamusProvider();
 	}
 
 	@Override
 	public void serverOnlyMappings() {
 		side.set(GameSide.SERVER);
-		legacyCalamusProvider();
 	}
 
-	private void legacyCalamusProvider() {
-		generation.set(1);
-		loom.setIntermediateMappingsProvider(LegacyCalamusProvider.class, provider -> {
+	private void calamusGen1Provider() {
+		loom.setIntermediateMappingsProvider(CalamusGen1Provider.class, provider -> {
 			provider.getSide()
 				.convention(side)
 				.finalizeValueOnRead();
 			provider.getIntermediaryUrl()
-				.convention(project.provider(() -> String.format(Constants.LEGACY_CALAMUS_URL, provider.getSide().get().suffix(), provider.getSide().get().suffix())))
+				.convention(project.provider(() -> Constants.calamusGen1Url(provider.getSide().get())))
 				.finalizeValueOnRead();
 			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
 		});
 	}
 
-	@Override
+	private void calamusGen2Provider() {
+		loom.setIntermediateMappingsProvider(CalamusGen2Provider.class, provider -> {
+			provider.getGeneration()
+				.convention(generation)
+				.finalizeValueOnRead();
+			provider.getIntermediaryUrl()
+				.convention(project.provider(() -> Constants.calamusGen2Url(provider.getGeneration().get())))
+				.finalizeValueOnRead();
+			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
+		});
+	}
+
 	public Property<Integer> getGeneration() {
 		return generation;
+	}
+
+	@Override
+	public void setGeneration(int generation) {
+		this.generation.set(generation);
+
+		if (generation == 1) {
+			calamusGen1Provider();
+		} else {
+			calamusGen2Provider();
+		}
 	}
 
 	public String minecraftVersion() {

@@ -1,5 +1,7 @@
 package net.ornithemc.ploceus;
 
+import net.ornithemc.ploceus.api.GameSide;
+
 public class Constants {
 
 	public static final String MAVEN_NAME = "Ornithe";
@@ -18,10 +20,14 @@ public class Constants {
 	public static final String VERSION_MANIFEST_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
 
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = "net.ornithemc";
-	public static final String LEGACY_CALAMUS_MAPPINGS = "calamus-intermediary:%s";
-	public static final String LEGACY_CALAMUS_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s%s/calamus-intermediary-%1$s%s-v2.jar";
-	public static final String VERSIONED_CALAMUS_MAPPINGS = "calamus-intermediary:%s";
-	public static final String VERSIONED_CALAMUS_URL = MAVEN_URL + "/net/ornithemc/calamus-intermediary-gen-%s/%1$s/calamus-intermediary-gen-%s-%1$s-v2.jar";
+	public static final String CALAMUS_GEN1_MAPPINGS = "calamus-intermediary:%s";
+	public static String calamusGen1Url(GameSide side) {
+		return MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s" + side.suffix()+ "/calamus-intermediary-%1$s" + side.suffix() + "-v2.jar";
+	}
+	public static final String CALAMUS_GEN2_MAPPINGS = "calamus-intermediary-gen%d:%s";
+	public static String calamusGen2Url(int generation) {
+		return MAVEN_URL + "/net/ornithemc/calamus-intermediary-gen" + generation + "/%1$s/calamus-intermediary-gen" + generation + "-%1$s-v2.jar";
+	}
 
 	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
 	public static final String CALAMUS_GENERATION_ATTRIBUTE = "Calamus-Generation";

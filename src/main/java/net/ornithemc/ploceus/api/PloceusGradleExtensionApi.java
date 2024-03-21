@@ -1,7 +1,5 @@
 package net.ornithemc.ploceus.api;
 
-import org.gradle.api.provider.Property;
-
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 
@@ -47,6 +45,6 @@ public interface PloceusGradleExtensionApi {
 	@Deprecated
 	void serverOnlyMappings();
 
-	Property<Integer> getGeneration();
+	void setGeneration(int generation); // TODO: change to a property once gen 2 is the default
 
 }

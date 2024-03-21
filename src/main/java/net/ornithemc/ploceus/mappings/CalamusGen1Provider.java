@@ -6,7 +6,7 @@ import net.fabricmc.loom.configuration.providers.mappings.IntermediaryMappingsPr
 
 import net.ornithemc.ploceus.api.GameSide;
 
-public abstract class LegacyCalamusProvider extends IntermediaryMappingsProvider {
+public abstract class CalamusGen1Provider extends IntermediaryMappingsProvider {
 
 	public abstract Property<GameSide> getSide();
 
