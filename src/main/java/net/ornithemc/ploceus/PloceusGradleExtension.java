@@ -34,6 +34,8 @@ import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsProvider;
+import net.ornithemc.ploceus.signatures.SignaturePatcherProcessor;
+import net.ornithemc.ploceus.signatures.SigsProvider;
 
 public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
@@ -48,6 +50,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final OslVersionCache oslVersions;
 	private final CommonLibraries commonLibraries;
 	private final Property<NestsProvider> nestsProvider;
+	private final Property<SigsProvider> sigsProvider;
 	private final Property<GameSide> side; // gen 1
 	private final Property<Integer> generation; // gen 2+
 
@@ -70,6 +73,18 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 			return provider;
 		}));
+		this.sigsProvider = project.getObjects().property(SigsProvider.class);
+		this.sigsProvider.convention(project.provider(() -> {
+			SigsProvider provider;
+			if (loom.getMinecraftProvider().isLegacyVersion()) {
+				provider = new SigsProvider.Split(project, loom, this);
+			} else {
+				provider = new SigsProvider.Simple(project, loom, this);
+			}
+			provider.provide();
+
+			return provider;
+		}));
 		this.nestsProvider.finalizeValueOnRead();
 		this.side = project.getObjects().property(GameSide.class);
 		this.side.convention(GameSide.MERGED);
@@ -86,6 +101,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
+		loom.addMinecraftJarProcessor(SignaturePatcherProcessor.class, this);
 
 		project.getTasks().configureEach(task -> {
             if (task instanceof AbstractRemapJarTask remapJarTask) {
@@ -113,6 +129,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	public NestsProvider getNestsProvider() {
 		return nestsProvider.get();
+	}
+
+	public SigsProvider getSigsProvider() {
+		return sigsProvider.get();
 	}
 
 	@Override

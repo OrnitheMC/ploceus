@@ -44,8 +44,14 @@ dependencies {
 	compileOnly("net.fabricmc:fabric-loom:" + baseVersion + "-SNAPSHOT")
 
 	implementation("com.google.code.gson:gson:2.10.1")
+	implementation("org.ow2.asm:asm:9.6")
+	implementation("org.ow2.asm:asm-analysis:9.6")
+	implementation("org.ow2.asm:asm-commons:9.6")
+	implementation("org.ow2.asm:asm-tree:9.6")
+	implementation("org.ow2.asm:asm-util:9.6")
 	implementation("net.fabricmc:mapping-io:0.5.1")
 	implementation("net.ornithemc:nester:1.3.1")
+	implementation("io.github.gaming32:signature-changer:1.0.0-beta.1")
 	implementation("com.vdurmont:semver4j:3.1.0")
 }
 
