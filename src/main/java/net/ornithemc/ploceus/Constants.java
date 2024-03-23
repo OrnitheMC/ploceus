@@ -6,6 +6,9 @@ public class Constants {
 	public static final String MAVEN_URL = "https://maven.ornithemc.net/releases";
 	public static final String META_URL = "https://meta.ornithemc.net";
 
+	public static final String QUILT_MAVEN_NAME = "Quilt";
+	public static final String QUILT_MAVEN_URL = "https://maven.quiltmc.org/release";
+
 	public static final String FORGE_MAVEN_NAME = "Forge";
 	public static final String FORGE_MAVEN_URL = "https://maven.minecraftforge.net/";
 
