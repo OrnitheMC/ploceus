@@ -123,6 +123,7 @@ public class OslVersionCache {
 				modulesJson = GSON.fromJson(ir, JsonArray.class);
 				json.add(version, modulesJson);
 			}
+			Files.createDirectories(oslVersionCache.getParent());
 			try (BufferedWriter bw = new BufferedWriter(new FileWriter(oslVersionCache.toFile()))) {
 				GSON.toJson(json, bw);
 			}
@@ -218,6 +219,7 @@ public class OslVersionCache {
 				versionsJson = GSON.fromJson(ir, JsonArray.class);
 				moduleJson.add(version, versionsJson);
 			}
+			Files.createDirectories(moduleVersionCache.getParent());
 			try (BufferedWriter bw = new BufferedWriter(new FileWriter(moduleVersionCache.toFile()))) {
 				GSON.toJson(json, bw);
 			}
