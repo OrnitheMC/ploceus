@@ -48,19 +48,18 @@ public class MappingsNester {
 	}
 
 	private String findTranslation(String className) {
-		ClassMapping c = mappings.getClass(className);
 		Nest nest = nests.get(className);
-		String mappedName = (c == null) ? className : c.getName(nsid);
+		String mappedName = mappings.mapClassName(className, nsid);
 
-		return (nest == null) ? mappedName : applyNest(c, nest);
+		return (nest == null) ? mappedName : applyNest(mappedName, nest);
 	}
 
-	private String applyNest(ClassMapping c, Nest nest) {
+	private String applyNest(String mappedName, Nest nest) {
 		// this allows for mappings for nested classes to be
 		// saved mostly intact, which makes translation here 
 		// easier
 		String enclTranslation = translate(nest.enclClassName);
-		String translation = c.getName(nsid).replace("__", "$");
+		String translation = mappedName.replace("__", "$");
 		int idx = translation.lastIndexOf('$');
 
 		if (idx > 0) {
