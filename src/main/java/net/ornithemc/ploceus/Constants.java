@@ -27,7 +27,7 @@ public class Constants {
 	public static final String SERVER_NESTS_CONFIGURATION = "serverNests";
 
 	public static final String VERSION_MANIFEST_PROPERTY = "loom_version_manifests";
-	public static final String VERSIONS_MANIFEST_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
+	public static final String VERSIONS_MANIFEST_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
 
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = MAVEN_GROUP;
 	public static String calamusGen1Mappings(GameSide side) {
