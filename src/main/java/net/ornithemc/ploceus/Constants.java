@@ -26,8 +26,18 @@ public class Constants {
 	public static final String CLIENT_NESTS_CONFIGURATION = "clientNests";
 	public static final String SERVER_NESTS_CONFIGURATION = "serverNests";
 
-	public static final String VERSIONS_MANIFEST_NAME = "ornithe";
-	public static final String VERSIONS_MANIFEST_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
+	public static final String VERSIONS_MANIFEST_NAME_GEN1 = "skyrising";
+	public static final String VERSIONS_MANIFEST_URL_GEN1 = "https://skyrising.github.io/mc-versions/version_manifest.json";
+	public static final String VERSIONS_MANIFEST_NAME_GEN2 = "ornithe";
+	public static final String VERSIONS_MANIFEST_URL_GEN2 = "https://ornithemc.net/mc-versions/version_manifest.json";
+
+	public static String versionsManifestName(int generation) {
+		return generation == 1 ? VERSIONS_MANIFEST_NAME_GEN1 : VERSIONS_MANIFEST_NAME_GEN2;
+	}
+
+	public static String versionsManifestUrl(int generation) {
+		return generation == 1 ? VERSIONS_MANIFEST_URL_GEN1 : VERSIONS_MANIFEST_URL_GEN2;
+	}
 
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = MAVEN_GROUP;
 	public static String calamusGen1Mappings(GameSide side) {
