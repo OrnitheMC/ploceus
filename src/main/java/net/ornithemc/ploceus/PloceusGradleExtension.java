@@ -107,7 +107,6 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		project.getConfigurations().register(Constants.SIGNATURES_CONFIGURATION);
 		project.getConfigurations().register(Constants.CLIENT_SIGNATURES_CONFIGURATION);
 		project.getConfigurations().register(Constants.SERVER_SIGNATURES_CONFIGURATION);
-		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSION_MANIFEST_URL);
 
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 		loom.addMinecraftJarProcessor(SignaturePatcherProcessor.class, this);
@@ -133,7 +132,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
             }
         });
 
-		calamusGen1Provider();
+		switchToGen1();
 	}
 
 	public NestsProvider getNestsProvider() {
@@ -326,7 +325,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		side.set(GameSide.SERVER);
 	}
 
-	private void calamusGen1Provider() {
+	private void switchToGen1() {
 		loom.setIntermediateMappingsProvider(CalamusGen1Provider.class, provider -> {
 			provider.getSide()
 				.convention(side)
@@ -336,9 +335,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				.finalizeValueOnRead();
 			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
 		});
+
+		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSIONS_MANIFEST_URL_GEN1);
 	}
 
-	private void calamusGen2Provider() {
+	private void switchToGen2() {
 		loom.setIntermediateMappingsProvider(CalamusGen2Provider.class, provider -> {
 			provider.getGeneration()
 				.convention(generation)
@@ -348,6 +349,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				.finalizeValueOnRead();
 			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
 		});
+
+		project.getExtensions().getExtraProperties().set(Constants.VERSION_MANIFEST_PROPERTY, Constants.VERSIONS_MANIFEST_URL_GEN2);
 	}
 
 	public Property<GameSide> getSide() {
@@ -363,9 +366,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.generation.set(generation);
 
 		if (generation == 1) {
-			calamusGen1Provider();
+			switchToGen1();
 		} else {
-			calamusGen2Provider();
+			switchToGen2();
 		}
 	}
 
@@ -378,12 +381,13 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 		String versionId = minecraftVersion();
 
+		String name = generation.get() == 1 ? "skyrising" : "ornithe";
 		Path userCache = loom.getFiles().getUserCache().toPath();
-		Path manifestCache = userCache.resolve("skyrising_version_manifest.json");
+		Path manifestCache = userCache.resolve(name + "_version_manifest.json");
 
 		try {
 			if (!Files.exists(manifestCache)) {
-				loom.download(Constants.VERSION_MANIFEST_URL).downloadPath(manifestCache);
+				loom.download(Constants.versionsManifestUrl(generation.get())).downloadPath(manifestCache);
 			}
 
 			try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
