@@ -36,7 +36,7 @@ public class MappingsUtil {
 						}
 						for (MethodMapping m : c.getMethods()) {
 							if (m.getName(srcNs) != null) {
-//								put(c.getName(srcNs) + "." + m.getName(srcNs) + m.getDesc(srcNs), m.getName(dstNs));
+								put(c.getName(srcNs) + "." + m.getName(srcNs) + m.getDesc(srcNs), m.getName(dstNs));
 							}
 						}
 					}
