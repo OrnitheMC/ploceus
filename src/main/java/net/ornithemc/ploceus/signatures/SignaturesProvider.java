@@ -165,8 +165,8 @@ public class SignaturesProvider {
 			if (isPresent()) {
 				if (sigs == null) {
 					if (client.isPresent() && server.isPresent()) {
-						SigsFile clientSigs = client.get(mappings, ns);
-						SigsFile serverSigs = server.get(mappings, ns);
+						SigsFile clientSigs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
+						SigsFile serverSigs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
 
 						sigs = MappingUtils.mergeSignatures(clientSigs, serverSigs);
 					} else {

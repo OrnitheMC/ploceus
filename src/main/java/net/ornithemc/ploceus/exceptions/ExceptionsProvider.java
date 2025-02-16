@@ -164,8 +164,8 @@ public class ExceptionsProvider {
 			if (isPresent()) {
 				if (excs == null) {
 					if (client.isPresent() && server.isPresent()) {
-						ExceptionsFile clientExcs = client.get(mappings, ns);
-						ExceptionsFile serverExcs = server.get(mappings, ns);
+						ExceptionsFile clientExcs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
+						ExceptionsFile serverExcs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
 
 						excs = MappingUtils.mergeExceptions(clientExcs, serverExcs);
 					} else {

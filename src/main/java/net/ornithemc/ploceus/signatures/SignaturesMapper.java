@@ -58,7 +58,11 @@ public class SignaturesMapper {
 				String mdesc = m.desc().getDescriptor();
 				SignatureMode mmode = me.getValue().mode();
 				String msignature = me.getValue().signature();
-				mname = mdesc.charAt(0) == '(' ? remapper.mapMethodName(ce.getKey(), mname, mdesc) : remapper.mapFieldName(ce.getKey(), mname, mdesc);
+				mname = mdesc.charAt(0) == '('
+					? mdesc.charAt(0) == '<'
+						? mname
+						: remapper.mapMethodName(ce.getKey(), mname, mdesc)
+					: remapper.mapFieldName(ce.getKey(), mname, mdesc);
 				mdesc = remapper.mapDesc(mdesc);
 				msignature = remapSignature(msignature);
 
