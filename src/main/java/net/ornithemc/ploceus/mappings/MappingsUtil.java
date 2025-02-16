@@ -27,12 +27,18 @@ public class MappingsUtil {
 
 			{
 				for (ClassMapping c : mappings.getClasses()) {
-					put(c.getName(srcNs), c.getName(dstNs));
-					for (FieldMapping f : c.getFields()) {
-						put(c.getName(srcNs) + "." + f.getName(srcNs), f.getName(dstNs));
-					}
-					for (MethodMapping m : c.getMethods()) {
-						put(c.getName(srcNs) + "." + m.getName(srcNs) + m.getDesc(srcNs), m.getName(dstNs));
+					if (c.getName(srcNs) != null) {
+						put(c.getName(srcNs), c.getName(dstNs));
+						for (FieldMapping f : c.getFields()) {
+							if (f.getName(srcNs) != null) {
+								put(c.getName(srcNs) + "." + f.getName(srcNs), f.getName(dstNs));
+							}
+						}
+						for (MethodMapping m : c.getMethods()) {
+							if (m.getName(srcNs) != null) {
+//								put(c.getName(srcNs) + "." + m.getName(srcNs) + m.getDesc(srcNs), m.getName(dstNs));
+							}
+						}
 					}
 				}
 			}
