@@ -15,6 +15,8 @@ import net.ornithemc.nester.nest.Nests;
 
 public class MappingsNester {
 
+	private static final String DST_NS = MappingsNamespace.NAMED.toString();
+
 	private final MappingTree mappings;
 	private final Nests nests;
 	private final Map<String, String> translations;
@@ -24,17 +26,28 @@ public class MappingsNester {
 		this.mappings = mappings;
 		this.nests = nests;
 		this.translations = new HashMap<>();
-		this.nsid = this.mappings.getNamespaceId(MappingsNamespace.NAMED.toString());
+		this.nsid = this.mappings.getNamespaceId(DST_NS);
+
+		if (this.nsid < 0) {
+			throw new IllegalStateException("Given mappings are wrongly ordered! Expected \'" + DST_NS + "\' in the dst namespaces but found only [" + String.join(", ", this.mappings.getDstNamespaces()) + "]");
+		}
 	}
 
 	public void apply(MappingVisitor visitor) throws IOException {
-		for (Nest nest : nests) {
-			String className = nest.className;
+		if (visitor.visitHeader()) {
+			visitor.visitNamespaces(mappings.getSrcNamespace(), mappings.getDstNamespaces());
+		}
+		if (visitor.visitContent()) {
+			for (Nest nest : nests) {
+				String className = nest.className;
 
-			if (visitor.visitClass(className)) {
-				visitor.visitDstName(MappedElementKind.CLASS, nsid, translate(className));
+				if (visitor.visitClass(className)) {
+					visitor.visitDstName(MappedElementKind.CLASS, nsid, translate(className));
+				}
 			}
 		}
+
+		visitor.visitEnd();
 	}
 
 	private String translate(String className) {
