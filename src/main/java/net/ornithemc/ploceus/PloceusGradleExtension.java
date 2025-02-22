@@ -40,6 +40,7 @@ import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
 import net.ornithemc.ploceus.nester.NestsMappingSpec;
 import net.ornithemc.ploceus.nester.NestsProvider;
+import net.ornithemc.ploceus.preen.PreenProcessor;
 import net.ornithemc.ploceus.signatures.SignaturePatcherProcessor;
 import net.ornithemc.ploceus.signatures.SignaturesProvider;
 
@@ -167,6 +168,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		loom.getLibraryProcessors().add((platform, context) -> new LibraryUpgrader(this, platform, context));
 		loom.addMinecraftJarProcessor(ExceptionPatcherProcessor.class, this);
 		loom.addMinecraftJarProcessor(SignaturePatcherProcessor.class, this);
+		loom.addMinecraftJarProcessor(PreenProcessor.class);
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 
 		project.getTasks().configureEach(task -> {
