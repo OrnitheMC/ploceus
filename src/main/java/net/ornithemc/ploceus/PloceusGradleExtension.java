@@ -3,11 +3,13 @@ package net.ornithemc.ploceus;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -25,12 +27,14 @@ import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.task.AbstractRemapJarTask;
+import net.fabricmc.loom.util.Constants.Configurations;
 import net.fabricmc.loom.util.ZipUtils;
 
 import net.ornithemc.ploceus.api.GameSide;
 import net.ornithemc.ploceus.api.PloceusGradleExtensionApi;
 import net.ornithemc.ploceus.exceptions.ExceptionPatcherProcessor;
 import net.ornithemc.ploceus.exceptions.ExceptionsProvider;
+import net.ornithemc.ploceus.lvt.LvtProcessor;
 import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.manifest.VersionsManifest;
 import net.ornithemc.ploceus.mappings.CalamusGen1Provider;
@@ -166,6 +170,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		project.getConfigurations().register(Constants.SERVER_NESTS_CONFIGURATION);
 
 		loom.getLibraryProcessors().add((platform, context) -> new LibraryUpgrader(this, platform, context));
+		loom.addMinecraftJarProcessor(LvtProcessor.class, this);
 		loom.addMinecraftJarProcessor(ExceptionPatcherProcessor.class, this);
 		loom.addMinecraftJarProcessor(SignaturePatcherProcessor.class, this);
 		loom.addMinecraftJarProcessor(PreenProcessor.class);
@@ -194,6 +199,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		});
 
 		switchToGen1();
+	}
+
+	public List<Path> getLibraries() {
+		return this.project.getConfigurations().findByName(Configurations.MINECRAFT_COMPILE_LIBRARIES).getFiles().stream().map(File::toPath).toList();
 	}
 
 	public ExceptionsProvider getExceptionsProvider() {
