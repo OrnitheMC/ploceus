@@ -10,6 +10,7 @@ import net.fabricmc.loom.api.processor.ProcessorContext;
 import net.fabricmc.loom.api.processor.SpecContext;
 
 import net.ornithemc.condor.Condor;
+import net.ornithemc.condor.Options;
 import net.ornithemc.ploceus.PloceusGradleExtension;
 
 public class LvtProcessor implements MinecraftJarProcessor<LvtProcessor.Spec> {
@@ -34,7 +35,8 @@ public class LvtProcessor implements MinecraftJarProcessor<LvtProcessor.Spec> {
 	@Override
 	public void processJar(Path jar, Spec spec, ProcessorContext ctx) throws IOException {
 		try {
-			Condor.run(jar, ploceus.getLibraries());
+			// processors are applied to the remapped jars, so keep existing names
+			Condor.run(jar, ploceus.getLibraries(), Options.builder().removeInvalidEntries().keepParameterNames().build());
 		} catch (IOException e) {
 			throw new IOException("failed to generate local variable tables!", e);
 		}
