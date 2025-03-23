@@ -21,6 +21,7 @@ import org.gradle.api.provider.Property;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.vdurmont.semver4j.Semver;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
@@ -219,6 +220,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	public boolean shouldUpgradeLibraries() {
 		return upgradeLibraries.get();
+	}
+
+	public boolean shouldPatchLvts() {
+		return new Semver(normalizedMinecraftVersion()).isLowerThan(new Semver("1.8.2-pre.5"));
 	}
 
 	@Override

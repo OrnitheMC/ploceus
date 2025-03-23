@@ -29,7 +29,7 @@ public class LvtProcessor implements MinecraftJarProcessor<LvtProcessor.Spec> {
 
 	@Override
 	public Spec buildSpec(SpecContext context) {
-		return new Spec();
+		return ploceus.shouldPatchLvts() ? new Spec() : null;
 	}
 
 	@Override
