@@ -40,13 +40,13 @@ public interface PloceusGradleExtensionApi {
 
 	void dependOsl(String configuration, String version, GameSide side) throws Exception;
 
-	void dependOslModule(String module, String version) throws Exception;
+	void dependOslModule(String version, String module) throws Exception;
 
-	void dependOslModule(String module, String version, String side) throws Exception;
+	void dependOslModule(String version, String side, String module) throws Exception;
 
-	void dependOslModule(String module, String version, GameSide side) throws Exception;
+	void dependOslModule(String version, GameSide side, String module) throws Exception;
 
-	void dependOslModule(String configuration, String module, String version, GameSide side) throws Exception;
+	void dependOslModule(String configuration, String version, GameSide side, String module) throws Exception;
 
 	String oslModule(String module, String version) throws Exception;
 
