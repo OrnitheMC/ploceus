@@ -233,7 +233,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				generation.get() == 1
 					? Constants.featherGen1Mappings(minecraftVersion(), side.get(), build)
 					: Constants.featherGen2Mappings(generation.get(), minecraftVersion(), build)
-			));
+			), layer -> {
+				if (generation.get() > 1) {
+					layer.containsUnpick();
+				}
+			});
 		});
 	}
 
