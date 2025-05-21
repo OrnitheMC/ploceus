@@ -64,6 +64,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final Property<SignaturesProvider> signaturesProvider;
 	private final Property<NestsProvider> nestsProvider;
 	private final Property<Boolean> upgradeLibraries;
+	private final Property<Boolean> patchLvts;
 	private final Property<GameSide> side; // gen 1
 	private final Property<Integer> generation; // gen 2+
 
@@ -140,6 +141,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.upgradeLibraries = project.getObjects().property(Boolean.class);
 		this.upgradeLibraries.convention(project.provider(() -> true));
 		this.upgradeLibraries.finalizeValueOnRead();
+		this.patchLvts = project.getObjects().property(Boolean.class);
+		this.patchLvts.convention(project.provider(() -> true));
+		this.patchLvts.finalizeValueOnRead();
 		this.side = project.getObjects().property(GameSide.class);
 		this.side.convention(project.provider(() -> {
 			VersionDetails details = minecraftVersionDetails();
@@ -223,7 +227,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	public boolean shouldPatchLvts() {
-		return new Semver(normalizedMinecraftVersion()).isLowerThan(new Semver("1.8.2-pre.5"));
+		return patchLvts.get() && new Semver(normalizedMinecraftVersion()).isLowerThan(new Semver("1.8.2-pre.5"));
 	}
 
 	@Override
@@ -406,6 +410,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public void disableLibraryUpgrades() {
 		upgradeLibraries.set(false);
+	}
+
+	@Override
+	public void disableLvtPatch() {
+		patchLvts.set(false);
 	}
 
 	@Override

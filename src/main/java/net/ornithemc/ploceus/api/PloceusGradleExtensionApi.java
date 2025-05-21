@@ -56,6 +56,8 @@ public interface PloceusGradleExtensionApi {
 
 	void disableLibraryUpgrades();
 
+	void disableLvtPatch();
+
 	@Deprecated
 	void clientOnlyMappings();
 
