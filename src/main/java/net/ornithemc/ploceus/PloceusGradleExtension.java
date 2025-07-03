@@ -363,23 +363,29 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	@Override
-	public void dependOslModule(String module, String version) throws Exception {
-		dependOslModule(module, version, GameSide.MERGED);
+	public void dependOslModule(String version, String module) throws Exception {
+		dependOslModule(version, GameSide.MERGED, module);
 	}
 
 	@Override
-	public void dependOslModule(String module, String version, String side) throws Exception {
-		dependOslModule(module, version, GameSide.of(side));
+	public void dependOslModule(String version, String side, String module) throws Exception {
+		dependOslModule(version, GameSide.of(side), module);
 	}
 
 	@Override
-	public void dependOslModule(String module, String version, GameSide side) throws Exception {
-		dependOslModule("modImplementation", module, version, side);
+	public void dependOslModule(String version, GameSide side, String module) throws Exception {
+		dependOslModule("modImplementation", version, side, module);
 	}
 
 	@Override
-	public void dependOslModule(String configuration, String module, String version, GameSide side) throws Exception {
-		addOslModuleDependency(configuration, module, oslModule(module, version, side));
+	public void dependOslModule(String configuration, String version, GameSide side, String module) throws Exception {
+		String baseVersion = oslVersions.getDependency(version, module);
+
+		if (baseVersion == null) {
+			throw new RuntimeException("osl " + version + " " + module + " for " + side.id() + " does not exist");
+		} else {
+			addOslModuleDependency(configuration, module, oslModule(module, baseVersion, side));
+		}
 	}
 
 	@Override

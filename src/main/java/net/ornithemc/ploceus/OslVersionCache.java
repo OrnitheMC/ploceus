@@ -87,6 +87,10 @@ public class OslVersionCache {
 		return Collections.unmodifiableMap(modules);
 	}
 
+	public String getDependency(String version, String module) throws Exception {
+		return getDependencies(version).get(module);
+	}
+
 	/**
 	 * checks if the osl version cache contains the specified version
 	 * and queries the meta server for this data if needed
