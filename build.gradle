@@ -7,7 +7,7 @@ plugins {
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -17,7 +17,7 @@ tasks.withType(JavaCompile).configureEach {
 
 group 'net.ornithemc'
 archivesBaseName = project.name
-def baseVersion = '1.10'
+def baseVersion = '1.11'
 
 def ENV = System.getenv()
 if (ENV.BUILD_NUMBER) {
