@@ -227,7 +227,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	public boolean shouldPatchLvts() {
-		return patchLvts.get() && new Semver(normalizedMinecraftVersion()).isLowerThan(new Semver("1.8.2-pre.5"));
+		return patchLvts.get()
+			&& new Semver(normalizedMinecraftVersion()).isLowerThan(new Semver("1.8.2-pre.5"))
+			&& new Semver(normalizedMinecraftVersion()).isGreaterThan(new Semver("0.32")); // broken in infdev and below
 	}
 
 	@Override
