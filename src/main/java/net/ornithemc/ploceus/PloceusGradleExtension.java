@@ -175,6 +175,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		project.getConfigurations().register(Constants.SERVER_NESTS_CONFIGURATION);
 
 		loom.getLibraryProcessors().add((platform, context) -> new LibraryUpgrader(this, platform, context));
+		loom.getLibraryProcessors().add((platform, context) -> new RealmsRemover(platform, context));
 		loom.addMinecraftJarProcessor(LvtProcessor.class, this);
 		loom.addMinecraftJarProcessor(ExceptionPatcherProcessor.class, this);
 		loom.addMinecraftJarProcessor(SignaturePatcherProcessor.class, this);
