@@ -17,9 +17,7 @@ import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.MappingDstNsReorder;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
-import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
-import net.fabricmc.mappingio.tree.MappingTree.FieldMapping;
-import net.fabricmc.mappingio.tree.MappingTree.MethodMapping;
+import net.fabricmc.mappingio.tree.MappingTree.ElementMapping;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
@@ -61,6 +59,9 @@ public class McpReader {
 	private MappingTreeView read() throws IOException {
 		mappings = new MemoryMappingTree();
 
+		try (InputStreamReader input = new InputStreamReader(files.readIntermediary())) {
+			MappingReader.read(input, mappings);
+		}
 		try (InputStreamReader input = new InputStreamReader(files.readSrg())) {
 			readSrg(input);
 		}
@@ -72,9 +73,6 @@ public class McpReader {
 		}
 		try (InputStreamReader input = new InputStreamReader(files.readParams())) {
 			readParams(input);
-		}
-		try (InputStreamReader input = new InputStreamReader(files.readIntermediary())) {
-			MappingReader.read(input, mappings);
 		}
 
 		return mappings;
@@ -109,13 +107,13 @@ public class McpReader {
 					}
 
 					String src = args[1];
-					String dst = args[2];
+					String srg = args[2];
 
 					if (src == null || src.isEmpty()) {
 						throw new IOException("invalid src name for class mapping on line " + lineNumber);
 					}
-					if (dst == null || dst.isEmpty()) {
-						throw new IOException("invalid dst name for class mapping on line " + lineNumber);
+					if (srg == null || srg.isEmpty()) {
+						throw new IOException("invalid srg name for class mapping on line " + lineNumber);
 					}
 
 					if (!src.equals(cls)) {
@@ -123,8 +121,9 @@ public class McpReader {
 						visitCls = mappings.visitClass(src);
 
 						if (visitCls) {
-							mappings.visitDstName(MappedElementKind.CLASS, 0, dst);
-							mappings.visitDstName(MappedElementKind.CLASS, 1, dst);
+							// for classes, srg == named
+							mappings.visitDstName(MappedElementKind.CLASS, 0, srg);
+							mappings.visitDstName(MappedElementKind.CLASS, 1, srg);
 							visitCls = mappings.visitElementContent(MappedElementKind.CLASS);
 						}
 					}
@@ -142,17 +141,17 @@ public class McpReader {
 					}
 
 					String srcCls = null;
-					String dstCls = null;
+					String srgCls = null;
 					String src = null;
-					String dst = null;
+					String srg = null;
 					String srcDesc = null;
 
 					if (field) {
 						src = args[1];
-						dst = args[2];
+						srg = args[2];
 					} else {
 						src = args[1];
-						dst = args[3];
+						srg = args[3];
 						srcDesc = args[2];
 
 						if (srcDesc == null || srcDesc.isEmpty()) {
@@ -161,49 +160,54 @@ public class McpReader {
 					}
 
 					int srcSep = src.lastIndexOf('/');
-					int dstSep = dst.lastIndexOf('/');
+					int dstSep = srg.lastIndexOf('/');
 
 					if (src == null || src.isEmpty() || srcSep <= 0) {
 						throw new IOException("invalid src name for " + (field ? "field" : "method") + " mapping on line " + lineNumber);
 					}
-					if (dst == null || dst.isEmpty() || dstSep <= 0) {
-						throw new IOException("invalid dst name for " + (field ? "field" : "method") + " mapping on line " + lineNumber);
+					if (srg == null || srg.isEmpty() || dstSep <= 0) {
+						throw new IOException("invalid srg name for " + (field ? "field" : "method") + " mapping on line " + lineNumber);
 					}
 
 					srcCls = src.substring(0, srcSep);
-					dstCls = dst.substring(0, dstSep);
+					srgCls = srg.substring(0, dstSep);
 					src = src.substring(srcSep + 1);
-					dst = dst.substring(dstSep + 1);
+					srg = srg.substring(dstSep + 1);
 
 					if (!srcCls.equals(cls)) {
 						cls = srcCls;
 						visitCls = mappings.visitClass(srcCls);
 
 						if (visitCls) {
-							mappings.visitDstName(MappedElementKind.CLASS, 0, dstCls);
-							mappings.visitDstName(MappedElementKind.CLASS, 1, dstCls);
+							// for classes, srg == named
+							mappings.visitDstName(MappedElementKind.CLASS, 0, srgCls);
+							mappings.visitDstName(MappedElementKind.CLASS, 1, srgCls);
 							visitCls = mappings.visitElementContent(MappedElementKind.CLASS);
 						}
 					}
 
 					if (visitCls) {
-						if (field ? mappings.visitField(src, null) : mappings.visitMethod(src, srcDesc)) {
-							MappedElementKind kind = field ? MappedElementKind.FIELD : MappedElementKind.METHOD;
-							boolean obf = field ? dst.startsWith("field_") : dst.startsWith("func_");
+						ElementMapping mapping = field
+							? mappings.getField(srcCls, src, null)
+							: mappings.getMethod(srcCls, src, srcDesc);
 
-							mappings.visitDstName(kind, 0, dst);
+						if (mapping != null && field ? mappings.visitField(src, null) : mappings.visitMethod(src, srcDesc)) {
+							MappedElementKind kind = field ? MappedElementKind.FIELD : MappedElementKind.METHOD;
+							boolean obf = field ? srg.startsWith("field_") : srg.startsWith("func_");
+
+							mappings.visitDstName(kind, 0, srg);
 							if (!obf) {
-								mappings.visitDstName(kind, 1, dst);
+								mappings.visitDstName(kind, 1, srg);
 							}
 							mappings.visitElementContent(kind);
 
 							if (field) {
-								fieldClasses.computeIfAbsent(dst, key -> new HashSet<>()).add(cls);
+								fieldClasses.computeIfAbsent(srg, key -> new HashSet<>()).add(srgCls);
 							} else {
-								methodClasses.computeIfAbsent(dst, key -> new HashSet<>()).add(cls);
+								methodClasses.computeIfAbsent(srg, key -> new HashSet<>()).add(srgCls);
 
-								if (dst.indexOf('_') > 0) {
-									methods.put(dst.split("[_]")[1], dst);
+								if (srg.indexOf('_') > 0) {
+									methods.put(srg.split("[_]")[1], srg);
 								} else {
 									// not obfuscated probably
 								}
@@ -260,27 +264,18 @@ public class McpReader {
 					throw new IOException("invalid dst name for field mapping on line " + lineNumber);
 				}
 
-				Collection<String> clss = fieldClasses.get(srg);
+				Collection<String> srgClss = fieldClasses.get(srg);
 
-				if (clss.isEmpty()) {
+				if (srgClss.isEmpty()) {
 					throw new IOException("unknown field mapping on line " + lineNumber);
 				}
 
-				for (String clsName : clss) {
-					ClassMapping cm = mappings.getClass(clsName);
-					String clsSrg = cm.getName(SRG_NAMESPACE);
-
-					if (mappings.visitClass(clsSrg) && mappings.visitElementContent(MappedElementKind.CLASS)) {
-						FieldMapping fm = cm.getField(srg, null, 0);
-
-						if (fm == null) {
-							throw new IOException("field " + srg + " went missing!");
-						} else {
-							mappings.visitField(srg, null);
-							mappings.visitDstName(MappedElementKind.FIELD, 0, dst);
-							if (jav != null && !jav.isEmpty()) {
-								mappings.visitComment(MappedElementKind.FIELD, jav);
-							}
+				for (String srgCls : srgClss) {
+					if (mappings.visitClass(srgCls) && mappings.visitElementContent(MappedElementKind.CLASS)) {
+						mappings.visitField(srg, null);
+						mappings.visitDstName(MappedElementKind.FIELD, 0, dst);
+						if (jav != null && !jav.isEmpty()) {
+							mappings.visitComment(MappedElementKind.FIELD, jav);
 						}
 					}
 				}
@@ -331,27 +326,18 @@ public class McpReader {
 					throw new IOException("invalid dst name for method mapping on line " + lineNumber);
 				}
 
-				Collection<String> clss = methodClasses.get(srg);
+				Collection<String> srgClss = methodClasses.get(srg);
 
-				if (clss.isEmpty()) {
+				if (srgClss.isEmpty()) {
 					throw new IOException("unknown method mapping on line " + lineNumber);
 				}
 
-				for (String clsName : clss) {
-					ClassMapping cm = mappings.getClass(clsName);
-					String clsSrg = cm.getName(SRG_NAMESPACE);
-
-					if (mappings.visitClass(clsSrg) && mappings.visitElementContent(MappedElementKind.CLASS)) {
-						MethodMapping mm = cm.getMethod(srg, null, 0);
-
-						if (mm == null) {
-							throw new IOException("method " + srg + " went missing!");
-						} else {
-							mappings.visitMethod(srg, null);
-							mappings.visitDstName(MappedElementKind.METHOD, 0, dst);
-							if (jav != null && !jav.isEmpty()) {
-								mappings.visitComment(MappedElementKind.METHOD, jav);
-							}
+				for (String srgCls : srgClss) {
+					if (mappings.visitClass(srgCls) && mappings.visitElementContent(MappedElementKind.CLASS)) {
+						mappings.visitMethod(srg, null);
+						mappings.visitDstName(MappedElementKind.METHOD, 0, dst);
+						if (jav != null && !jav.isEmpty()) {
+							mappings.visitComment(MappedElementKind.METHOD, jav);
 						}
 					}
 				}
@@ -416,27 +402,18 @@ public class McpReader {
 					continue;
 				}
 
-				String mtdName = methods.get(methodId);
-				Collection<String> clss = methodClasses.get(mtdName);
+				String srgMtd = methods.get(methodId);
+				Collection<String> srgClss = methodClasses.get(srgMtd);
 
-				if (clss.isEmpty()) {
+				if (srgClss.isEmpty()) {
 					throw new IOException("unknown parameter mapping on line " + lineNumber);
 				}
 
-				for (String clsName : clss) {
-					ClassMapping cm = mappings.getClass(clsName);
-					String clsSrg = cm.getName(SRG_NAMESPACE);
-
-					if (mappings.visitClass(clsSrg) && mappings.visitElementContent(MappedElementKind.CLASS)) {
-						MethodMapping mm = cm.getMethod(mtdName, null, 0);
-
-						if (mm == null) {
-							throw new IOException("method " + srg + " went missing!");
-						} else {
-							if (mappings.visitMethod(mtdName, null) && mappings.visitElementContent(MappedElementKind.METHOD)) {
-								mappings.visitMethodArg(-1, idx, null);
-								mappings.visitDstName(MappedElementKind.METHOD_ARG, 0, dst);
-							}
+				for (String srgCls : srgClss) {
+					if (mappings.visitClass(srgCls) && mappings.visitElementContent(MappedElementKind.CLASS)) {
+						if (mappings.visitMethod(srgMtd, null) && mappings.visitElementContent(MappedElementKind.METHOD)) {
+							mappings.visitMethodArg(-1, idx, null);
+							mappings.visitDstName(MappedElementKind.METHOD_ARG, 0, dst);
 						}
 					}
 				}
