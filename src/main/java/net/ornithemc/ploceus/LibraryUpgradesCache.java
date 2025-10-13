@@ -67,7 +67,7 @@ public class LibraryUpgradesCache {
 			try {
 				libs = fromCache();
 			} catch (Exception ce) {
-				throw new IllegalStateException("unable to read library upgrades from cache for gen" + generation() + " " + mcVersion(), me);
+				throw new IllegalStateException("unable to read library upgrades from cache for gen" + generation() + " " + mcVersion(), ce);
 			}
 
 			if (libs == null) {
