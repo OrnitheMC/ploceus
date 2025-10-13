@@ -115,8 +115,8 @@ public class LibraryUpgradesCache {
 			LoomGradleExtension loom = LoomGradleExtension.get(this.project);
 			Path userCache = loom.getFiles().getUserCache().toPath();
 
-			libsCache = userCache.resolve(mcVersion).resolve("library-upgrades.json");
-			librariesCache.put(mcVersion, libsCache);
+			libsCache = userCache.resolve(mcVersion()).resolve("library-upgrades.json");
+			librariesCache.put(mcVersion(), libsCache);
 		}
 
 		if (!Files.exists(libsCache)) {
@@ -155,8 +155,8 @@ public class LibraryUpgradesCache {
 			LoomGradleExtension loom = LoomGradleExtension.get(this.project);
 			Path userCache = loom.getFiles().getUserCache().toPath();
 
-			libsCache = userCache.resolve(mcVersion).resolve("library-upgrades.json");
-			librariesCache.put(mcVersion, libsCache);
+			libsCache = userCache.resolve(mcVersion()).resolve("library-upgrades.json");
+			librariesCache.put(mcVersion(), libsCache);
 		}
 
 		JsonObject json = null;
