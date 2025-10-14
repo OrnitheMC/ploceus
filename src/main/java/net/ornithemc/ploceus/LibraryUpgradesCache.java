@@ -109,6 +109,14 @@ public class LibraryUpgradesCache {
 	}
 
 	private List<Library> fromCache() throws Exception {
+		// first try memory cache
+		List<Library> libs = libraries.get(mcVersion());
+
+		if (libs != null) {
+			return libs;
+		}
+
+		// then disk cache
 		Path libsCache = librariesCache.get(mcVersion());
 
 		if (libsCache == null) {
@@ -129,14 +137,14 @@ public class LibraryUpgradesCache {
 			json = GSON.fromJson(br, JsonObject.class);
 		}
 
-		List<Library> libs = new ArrayList<>();
-
 		String generation = "gen" + generation();
 		JsonArray libsJson = json.getAsJsonArray(generation);
 
 		if (libsJson == null) {
 			return null;
 		}
+
+		libs = new ArrayList<>();
 
 		for (JsonElement libJson : libsJson) {
 			String name = libJson.getAsString();
