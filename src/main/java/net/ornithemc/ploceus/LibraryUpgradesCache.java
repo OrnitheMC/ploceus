@@ -2,14 +2,13 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.gradle.api.Project;
 
@@ -29,17 +28,15 @@ public class LibraryUpgradesCache {
 
 	private final Project project;
 	private final PloceusGradleExtension ploceus;
-	private final Map<String, List<Library>> libraries;
-	private final Map<String, Path> librariesCache;
 
 	private Integer generation;
-	private String mcVersion;
+	private String minecraftVersion;
+	private List<Library> libraries;
+	private Path librariesCache;
 
 	public LibraryUpgradesCache(Project project, PloceusGradleExtension ploceus) {
 		this.project = project;
 		this.ploceus = ploceus;
-		this.libraries = new HashMap<>();
-		this.librariesCache = new HashMap<>();
 	}
 
 	private int generation() {
@@ -50,38 +47,57 @@ public class LibraryUpgradesCache {
 		return generation;
 	}
 
-	private String mcVersion() {
-		if (mcVersion == null) {
-			mcVersion = ploceus.minecraftVersion();
+	private String minecraftVersion() {
+		if (minecraftVersion == null) {
+			minecraftVersion = ploceus.minecraftVersion();
 		}
 
-		return mcVersion;
+		return minecraftVersion;
 	}
 
-	public List<Library> get() {
+	private Path librariesCache() {
+		if (librariesCache == null) {
+			LoomGradleExtension loom = LoomGradleExtension.get(project);
+			Path userCache = loom.getFiles().getUserCache().toPath();
+
+			librariesCache = userCache.resolve(minecraftVersion()).resolve("library-upgrades.json");
+		}
+
+		return librariesCache;
+	}
+
+	public List<Library> getLibraryUpgrades() {
+		if (libraries == null) {
+			libraries = getLibraries();
+		}
+
+		return libraries;
+	}
+
+	private List<Library> getLibraries() {
 		List<Library> libs = null;
 
 		try {
-			libs = fromMeta();
+			libs = getLibrariesFromMeta();
 		} catch (Exception me) {
 			try {
-				libs = fromCache();
+				libs = getLibrariesFromCache();
 			} catch (Exception ce) {
-				throw new IllegalStateException("unable to read library upgrades from cache for gen" + generation() + " " + mcVersion(), ce);
+				project.getLogger().warn("unable to read library upgrades from cache for gen" + generation() + " " + minecraftVersion(), ce);
 			}
 
 			if (libs == null) {
-				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + generation() + " " + mcVersion() + ", and it is not in the cache", me);
+				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + generation() + " " + minecraftVersion() + ", and it is not in the cache", me);
 			}
 		}
 
 		return libs;
 	}
 
-	private List<Library> fromMeta() throws Exception {
-		String metaUrl = Constants.librariesMetaUrl(mcVersion(), generation());
+	private List<Library> getLibrariesFromMeta() throws Exception {
+		String metaUrl = Constants.librariesMetaUrl(minecraftVersion(), generation());
 
-		try (InputStreamReader ir = new InputStreamReader(new URL(metaUrl).openStream())) {
+		try (InputStreamReader ir = new InputStreamReader(new URI(metaUrl).toURL().openStream())) {
 			JsonArray libsJson = GSON.fromJson(ir, JsonArray.class);
 			List<Library> libs = new ArrayList<>();
 
@@ -96,45 +112,24 @@ public class LibraryUpgradesCache {
 				libs.add(Library.fromMaven(name, Target.COMPILE));
 			}
 
-			libraries.put(mcVersion(), libs);
-
 			try {
-				saveToCache(libs);
+				saveLibrariesToCache(libs);
 			} catch (Exception e) {
-				project.getLogger().warn("unable to save library upgrades for gen" + generation() + " " + mcVersion() + " to cache", e);
+				project.getLogger().warn("unable to save library upgrades for gen" + generation() + " " + minecraftVersion() + " to cache", e);
 			}
 
 			return libs;
 		}
 	}
 
-	private List<Library> fromCache() throws Exception {
-		// first try memory cache
-		List<Library> libs = libraries.get(mcVersion());
-
-		if (libs != null) {
-			return libs;
-		}
-
-		// then disk cache
-		Path libsCache = librariesCache.get(mcVersion());
-
-		if (libsCache == null) {
-			LoomGradleExtension loom = LoomGradleExtension.get(this.project);
-			Path userCache = loom.getFiles().getUserCache().toPath();
-
-			libsCache = userCache.resolve(mcVersion()).resolve("library-upgrades.json");
-			librariesCache.put(mcVersion(), libsCache);
-		}
-
-		if (!Files.exists(libsCache)) {
-			return null;
-		}
-
+	private List<Library> getLibrariesFromCache() throws Exception {
+		Path libsCache = librariesCache();
 		JsonObject json;
 
 		try (BufferedReader br = Files.newBufferedReader(libsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
+		} catch (FileNotFoundException e) {
+			return null;
 		}
 
 		String generation = "gen" + generation();
@@ -144,7 +139,7 @@ public class LibraryUpgradesCache {
 			return null;
 		}
 
-		libs = new ArrayList<>();
+		List<Library> libs = new ArrayList<>();
 
 		for (JsonElement libJson : libsJson) {
 			String name = libJson.getAsString();
@@ -156,26 +151,14 @@ public class LibraryUpgradesCache {
 		return libs;
 	}
 
-	private void saveToCache(List<Library> libs) throws Exception {
-		Path libsCache = librariesCache.get(mcVersion());
+	private void saveLibrariesToCache(List<Library> libs) throws Exception {
+		Path libsCache = librariesCache();
+		JsonObject json;
 
-		if (libsCache == null) {
-			LoomGradleExtension loom = LoomGradleExtension.get(this.project);
-			Path userCache = loom.getFiles().getUserCache().toPath();
-
-			libsCache = userCache.resolve(mcVersion()).resolve("library-upgrades.json");
-			librariesCache.put(mcVersion(), libsCache);
-		}
-
-		JsonObject json = null;
-
-		if (!Files.exists(libsCache)) {
+		try (BufferedReader br = Files.newBufferedReader(libsCache)) {
+			json = GSON.fromJson(br, JsonObject.class);
+		} catch (FileNotFoundException e) {
 			json = new JsonObject();
-		}
-		if (json == null) {
-			try (BufferedReader br = Files.newBufferedReader(libsCache)) {
-				json = GSON.fromJson(br, JsonObject.class);
-			}
 		}
 
 		String generation = "gen" + generation();

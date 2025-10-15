@@ -425,7 +425,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	public List<Library> getLibraryUpgrades() {
-		return libraryUpgrades.get();
+		return libraryUpgrades.getLibraryUpgrades();
 	}
 
 	@Override
