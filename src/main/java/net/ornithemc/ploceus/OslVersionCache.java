@@ -2,14 +2,13 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.InputStreamReader;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.gradle.api.Project;
@@ -30,205 +29,331 @@ public class OslVersionCache {
 
 	private final Project project;
 	private final PloceusGradleExtension ploceus;
-	private final Map<String, Map<String, String>> dependencies;
-	private final Map<String, String> versions;
-	private final Path oslVersionCache;
-	private final Map<String, Path> oslModuleVersionCache;
+	private final Map<String, Map<String, String>> moduleBaseVersions;
+	private final Map<String, String> moduleVersions;
 
-	private String mcVersion;
+	private Integer intermediaryGeneration;
+	private String minecraftVersion;
+	private Path moduleBaseVersionsCache;
+	private Path moduleVersionsCache;
 
 	public OslVersionCache(Project project, PloceusGradleExtension ploceus) {
-		LoomGradleExtension loom = LoomGradleExtension.get(project);
-		Path userCache = loom.getFiles().getUserCache().toPath();
-
 		this.project = project;
 		this.ploceus = ploceus;
-		this.dependencies = new HashMap<>();
-		this.versions = new HashMap<>();
-		this.oslVersionCache = userCache.resolve("osl-versions.json");
-		this.oslModuleVersionCache = new HashMap<>();
+		this.moduleBaseVersions = new HashMap<>();
+		this.moduleVersions = new HashMap<>();
 	}
 
-	private String mcVersion() {
-		if (mcVersion == null) {
-			mcVersion = ploceus.minecraftVersion();
+	private int intermediaryGeneration() {
+		if (intermediaryGeneration == null) {
+			intermediaryGeneration = ploceus.getIntermediaryGeneration().get();
 		}
 
-		return mcVersion;
+		return intermediaryGeneration;
 	}
 
-	public Map<String, String> getDependencies(String version) throws Exception {
-		Map<String, String> modules = dependencies.get(version);
-
-		if (modules != null) {
-			return Collections.unmodifiableMap(modules);
+	private String minecraftVersion() {
+		if (minecraftVersion == null) {
+			minecraftVersion = ploceus.minecraftVersion();
 		}
 
-		modules = new HashMap<>();
-		JsonArray modulesJson = queryOslModules(version);
-
-		for (JsonElement moduleJson : modulesJson) {
-			JsonObject moduleJsonObj = moduleJson.getAsJsonObject();
-			String maven = moduleJsonObj.get("maven").getAsString();
-			String moduleName = maven.split("[:]")[1];
-			String moduleVersion = moduleJsonObj.get("version").getAsString();
-
-			modules.put(moduleName, moduleVersion);
-		}
-
-		// add this entry to the map only after the meta queries
-		// if they fail, we might add an empty map which is invalid
-		if (modules.isEmpty()) {
-			throw new RuntimeException("no OSL modules found for OSL " + version);
-		} else {
-			dependencies.put(version, modules);
-		}
-
-		return Collections.unmodifiableMap(modules);
+		return minecraftVersion;
 	}
 
-	public String getDependency(String version, String module) throws Exception {
-		return getDependencies(version).get(module);
-	}
-
-	/**
-	 * checks if the osl version cache contains the specified version
-	 * and queries the meta server for this data if needed
-	 * 
-	 * @return the json array with the maven data for all the modules
-	 *         for this osl version
-	 */
-	private JsonArray queryOslModules(String version) throws Exception {
-		JsonObject json = null;
-
-		// if the file does not exist, we create it
-		// and we cache the json object so we do not
-		// unnecessarily read the file for that again
-		if (!Files.exists(oslVersionCache)) {
-			json = new JsonObject();
-
-			// no need to write this to disk at this point
-			// the data is empty so the meta will be queried
-			// and once the data has been added the file will
-			// be written to disk
-		}
-		if (json == null) {
-			try (BufferedReader br = new BufferedReader(new FileReader(oslVersionCache.toFile()))) {
-				json = GSON.fromJson(br, JsonObject.class);
-			}
-		}
-
-		JsonArray modulesJson = json.getAsJsonArray(version);
-
-		if (modulesJson == null) {
-			String metaUrl = String.format(Constants.META_URL + Constants.OSL_META_ENDPOINT, version);
-
-			try (InputStreamReader ir = new InputStreamReader(new URL(metaUrl).openStream())) {
-				modulesJson = GSON.fromJson(ir, JsonArray.class);
-				json.add(version, modulesJson);
-			}
-			Files.createDirectories(oslVersionCache.getParent());
-			try (BufferedWriter bw = new BufferedWriter(new FileWriter(oslVersionCache.toFile()))) {
-				GSON.toJson(json, bw);
-			}
-		}
-
-		return modulesJson;
-	}
-
-	public String getVersion(String module, String version, GameSide side) throws Exception {
-		String key = module + version;
-		String cachedVersion = versions.get(key);
-
-		if (cachedVersion != null) {
-			return cachedVersion;
-		}
-
-		JsonArray versionsJson = queryOslModuleVersions(module, version, side);
-
-		for (JsonElement versionJson : versionsJson) {
-			JsonObject versionJsonObj = versionJson.getAsJsonObject();
-			String moduleVersion = versionJsonObj.get("version").getAsString();
-
-			if (side == GameSide.MERGED || module.equals(Constants.OSL_CORE) || moduleVersion.contains(side.id())) {
-				versions.put(key, cachedVersion = moduleVersion);
-				break;
-			}
-		}
-
-		return cachedVersion;
-	}
-
-	/**
-	 * checks if the module version cache contains the specified version
-	 * and queries the meta server for this data if needed
-	 * 
-	 * @return the json array with the maven data for all versions for
-	 *         this module version and mc version
-	 */
-	private JsonArray queryOslModuleVersions(String module, String version, GameSide side) throws Exception {
-		String mcVersion = mcVersion();
-		Path moduleVersionCache = oslModuleVersionCache.get(mcVersion);
-
-		// the file can only be initialized after the Minecraft dependency
-		// has been declared so initially we set the value to null
-		if (moduleVersionCache == null) {
-			LoomGradleExtension loom = LoomGradleExtension.get(this.project);
+	private Path moduleBaseVersionsCache() {
+		if (moduleBaseVersionsCache == null) {
+			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			Path userCache = loom.getFiles().getUserCache().toPath();
-
-			moduleVersionCache = userCache.resolve(mcVersion).resolve("osl-module-versions.json");
-			oslModuleVersionCache.put(mcVersion, moduleVersionCache);
+			
+			moduleBaseVersionsCache = userCache.resolve("osl-versions.json");
 		}
 
-		JsonObject json = null;
+		return moduleBaseVersionsCache;
+	}
 
-		// if the file does not exist, we create it
-		// and we cache the json object so we do not
-		// unnecessarily read the file for that again
-		if (!Files.exists(moduleVersionCache)) {
-			json = new JsonObject();
-
-			// no need to write this to disk at this point
-			// the data is empty so the meta will be queried
-			// and once the data has been added the file will
-			// be written to disk
+	private Path moduleVersionsCache() {
+		if (moduleVersionsCache == null) {
+			LoomGradleExtension loom = LoomGradleExtension.get(project);
+			Path userCache = loom.getFiles().getUserCache().toPath();
+			
+			moduleVersionsCache = userCache.resolve(minecraftVersion()).resolve("osl-module-versions.json");
 		}
-		if (json == null) {
-			try (BufferedReader br = new BufferedReader(new FileReader(moduleVersionCache.toFile()))) {
-				json = GSON.fromJson(br, JsonObject.class);
+
+		return moduleVersionsCache;
+	}
+
+	public Map<String, String> getOslModuleBaseVersions(String version) {
+		Map<String, String> modules = moduleBaseVersions.get(version);
+
+		if (modules == null) {
+			moduleBaseVersions.put(version, modules = getModuleBaseVersions(version));
+		}
+
+		return modules;
+	}
+
+	public String getOslModuleBaseVersion(String version, String module) {
+		return getOslModuleBaseVersions(version).get(module);
+	}
+
+	private Map<String, String> getModuleBaseVersions(String version) {
+		Map<String, String> baseVersions = null;
+
+		try {
+			baseVersions = getModuleBaseVersionsFromMeta(version);
+		} catch (Exception me) {
+			try {
+				baseVersions = getModuleBaseVersionsFromCache(version);
+			} catch (Exception ce) {
+				project.getLogger().warn("unable to read OSL module base versions from cache for gen" + intermediaryGeneration() + " " + version, ce);
+			}
+
+			if (baseVersions == null) {
+				throw new IllegalStateException("unable to fetch OSL module base versions from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
 			}
 		}
 
-		JsonObject moduleJson = json.getAsJsonObject(module);
+		return baseVersions;
+	}
 
-		if (moduleJson == null) {
-			moduleJson = new JsonObject();
-			json.add(module, moduleJson);
+	private Map<String, String> getModuleBaseVersionsFromMeta(String version) throws Exception {
+		String metaUrl = Constants.oslVersionMetaEndpoint(intermediaryGeneration(), version);
 
-			// no need to write this to disk at this point
-			// the data is empty so the meta will be queried
-			// and once the data has been added the file will
-			// be written to disk
+		try (InputStreamReader ir = new InputStreamReader(new URI(metaUrl).toURL().openStream())) {
+			JsonArray modulesJson = GSON.fromJson(ir, JsonArray.class);
+			Map<String, String> baseVersions = new LinkedHashMap<>();
+
+			for (JsonElement e : modulesJson) {
+				if (!e.isJsonObject()) {
+					continue;
+				}
+
+				JsonObject moduleJson = e.getAsJsonObject();
+				String maven = moduleJson.get("maven").getAsString();
+				String moduleName = maven.split("[:]")[1];
+				String moduleVersion = moduleJson.get("version").getAsString();
+
+				baseVersions.put(moduleName, moduleVersion);
+			}
+
+			try {
+				saveModuleBaseVersionsToCache(version, baseVersions);
+			} catch (Exception e) {
+				project.getLogger().warn("unable to save OSL module base versions for gen" + intermediaryGeneration() + " " + version + " to cache", e);
+			}
+
+			return baseVersions;
+		}
+	}
+
+	private Map<String, String> getModuleBaseVersionsFromCache(String version) throws Exception {
+		Path baseVersionsCache = moduleBaseVersionsCache();
+		JsonObject json;
+
+		try (BufferedReader br = Files.newBufferedReader(baseVersionsCache)) {
+			json = GSON.fromJson(br, JsonObject.class);
+		} catch (NoSuchFileException e) {
+			return null;
 		}
 
-		JsonArray versionsJson = moduleJson.getAsJsonArray(version);
+		String generation = "gen" + intermediaryGeneration();
+		JsonObject versionsJson = json.getAsJsonObject(generation);
 
 		if (versionsJson == null) {
-			String metaUrl = String.format(Constants.META_URL + Constants.OSL_MODULE_META_ENDPOINT,
-				module,
-				mcVersion,
-				version);
+			return null;
+		}
 
-			try (InputStreamReader ir = new InputStreamReader(new URL(metaUrl).openStream())) {
-				versionsJson = GSON.fromJson(ir, JsonArray.class);
-				moduleJson.add(version, versionsJson);
+		JsonObject baseVersionsJson = versionsJson.getAsJsonObject(version);
+
+		if (baseVersionsJson == null) {
+			return null;
+		}
+
+		Map<String, String> baseVersions = new HashMap<>();
+
+		for (Map.Entry<String, JsonElement> e : baseVersionsJson.entrySet()) {
+			JsonElement baseVersionJson = e.getValue();
+
+			if (!baseVersionJson.isJsonPrimitive()) {
+				continue;
 			}
-			Files.createDirectories(moduleVersionCache.getParent());
-			try (BufferedWriter bw = new BufferedWriter(new FileWriter(moduleVersionCache.toFile()))) {
-				GSON.toJson(json, bw);
+
+			String moduleName = e.getKey();
+			String moduleVersion = baseVersionJson.getAsString();
+
+			baseVersions.put(moduleName, moduleVersion);
+		}
+
+		return baseVersions;
+	}
+
+	private void saveModuleBaseVersionsToCache(String version, Map<String, String> baseVersions) throws Exception {
+		Path baseVersionsCache = moduleBaseVersionsCache();
+		JsonObject json = null;
+
+		try (BufferedReader br = Files.newBufferedReader(baseVersionsCache)) {
+			json = GSON.fromJson(br, JsonObject.class);
+		} catch (NoSuchFileException e) {
+			json = new JsonObject();
+		}
+
+		String generation = "gen" + intermediaryGeneration();
+		JsonObject versionsJson = json.getAsJsonObject(generation);
+
+		if (versionsJson == null) {
+			versionsJson = new JsonObject();
+			json.add(generation, versionsJson);
+		}
+
+		JsonObject baseVersionsJson = new JsonObject();
+		versionsJson.add(version, baseVersionsJson);
+
+		for (Map.Entry<String, String> e : baseVersions.entrySet()) {
+			String moduleName = e.getKey();
+			String moduleVersion = e.getValue();
+
+			baseVersionsJson.addProperty(moduleName, moduleVersion);
+		}
+
+		Files.createDirectories(baseVersionsCache.getParent());
+
+		try (BufferedWriter bw = Files.newBufferedWriter(baseVersionsCache)) {
+			GSON.toJson(json, bw);
+		}
+	}
+
+	public String getOslModuleVersion(String module, String version, GameSide side) {
+		String moduleVersion = moduleVersions.get(module + version + side.suffix());
+
+		if (moduleVersion == null) {
+			moduleVersions.put(module + version + side.suffix(), moduleVersion = getModuleVersion(module, version, side));
+		}
+
+		return moduleVersion;
+	}
+
+	private String getModuleVersion(String module, String version, GameSide side) {
+		String moduleVersion = null;
+
+		try {
+			moduleVersion = getModuleVersionFromMeta(module, version, side);
+		} catch (Exception me) {
+			try {
+				moduleVersion = getModuleVersionFromCache(module, version, side);
+			} catch (Exception ce) {
+				project.getLogger().warn("unable to read OSL module version from cache for gen" + intermediaryGeneration() + " " + module + " " + version, ce);
+			}
+
+			if (moduleVersion == null) {
+				throw new IllegalStateException("unable to fetch OSL module version from meta for gen" + intermediaryGeneration() + " " + module + " " + version + ", and it is not in the cache", me);
 			}
 		}
 
-		return versionsJson;
+		return moduleVersion;
+	}
+
+	private String getModuleVersionFromMeta(String module, String version, GameSide side) throws Exception {
+		String metaUrl = Constants.oslModuleVersionMetaEndpoint(intermediaryGeneration(), module, minecraftVersion(), version + side.suffix());
+
+		try (InputStreamReader ir = new InputStreamReader(new URI(metaUrl).toURL().openStream())) {
+			JsonArray modulesJson = GSON.fromJson(ir, JsonArray.class);
+			String moduleVersion = null;
+
+			for (JsonElement e : modulesJson) {
+				if (!e.isJsonObject()) {
+					continue;
+				}
+
+				JsonObject moduleJson = e.getAsJsonObject();
+				moduleVersion = moduleJson.get("version").getAsString();
+
+				if (moduleVersion.contains(side.id()) || (!moduleVersion.contains(GameSide.CLIENT.id()) && !moduleVersion.contains(GameSide.SERVER.id()))) {
+					break;
+				} else {
+					moduleVersion = null;
+				}
+			}
+
+			try {
+				saveModuleVersionToCache(module, version, side, moduleVersion);
+			} catch (Exception e) {
+				project.getLogger().warn("unable to save OSL module versions for gen" + intermediaryGeneration() + " " + module + " " + version + " to cache", e);
+			}
+
+			return moduleVersion;
+		}
+	}
+
+	private String getModuleVersionFromCache(String module, String version, GameSide side) throws Exception {
+		Path versionsCache = moduleVersionsCache();
+		JsonObject json;
+
+		try (BufferedReader br = Files.newBufferedReader(versionsCache)) {
+			json = GSON.fromJson(br, JsonObject.class);
+		} catch (NoSuchFileException e) {
+			return null;
+		}
+
+		String generation = "gen" + intermediaryGeneration();
+		JsonObject versionsJson = json.getAsJsonObject(generation);
+
+		if (versionsJson == null) {
+			return null;
+		}
+
+		JsonObject modulesJson = versionsJson.getAsJsonObject(version);
+
+		if (modulesJson == null) {
+			return null;
+		}
+
+		JsonObject moduleVersionsJson = modulesJson.getAsJsonObject(module);
+
+		if (moduleVersionsJson == null) {
+			return null;
+		}
+
+		return moduleVersionsJson.get(side.id()).getAsString();
+	}
+
+	private void saveModuleVersionToCache(String module, String version, GameSide side, String moduleVersion) throws Exception {
+		Path versionsCache = moduleVersionsCache();
+		JsonObject json = null;
+
+		try (BufferedReader br = Files.newBufferedReader(versionsCache)) {
+			json = GSON.fromJson(br, JsonObject.class);
+		} catch (NoSuchFileException e) {
+			json = new JsonObject();
+		}
+
+		String generation = "gen" + intermediaryGeneration();
+		JsonObject versionsJson = json.getAsJsonObject(generation);
+
+		if (versionsJson == null) {
+			versionsJson = new JsonObject();
+			json.add(generation, versionsJson);
+		}
+
+		JsonObject modulesJson = versionsJson.getAsJsonObject(version);
+
+		if (modulesJson == null) {
+			modulesJson = new JsonObject();
+			versionsJson.add(version, modulesJson);
+		}
+
+		JsonObject moduleVersionsJson = modulesJson.getAsJsonObject(module);
+
+		if (moduleVersionsJson == null) {
+			moduleVersionsJson = new JsonObject();
+			modulesJson.add(module, moduleVersionsJson);
+		}
+
+		moduleVersionsJson.add(side.id(), moduleVersionsJson);
+
+		Files.createDirectories(versionsCache.getParent());
+
+		try (BufferedWriter bw = Files.newBufferedWriter(versionsCache)) {
+			GSON.toJson(json, bw);
+		}
 	}
 }

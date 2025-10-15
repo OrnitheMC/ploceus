@@ -95,11 +95,21 @@ public class Constants {
 	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
 	public static final String CALAMUS_GENERATION_ATTRIBUTE = "Calamus-Generation";
 
-	public static final String OSL_MAVEN_GROUP = MAVEN_GROUP + ".osl";
+	public static final String OSL_MAVEN_GROUP_GEN1 = MAVEN_GROUP + ".osl";
+	public static final String OSL_MAVEN_GROUP_GEN2 = MAVEN_GROUP + ".osl-gen%d";
+	public static String oslMavenGroup(int generation) {
+		return generation == 1 ? OSL_MAVEN_GROUP_GEN1 : String.format(OSL_MAVEN_GROUP_GEN2, generation);
+	}
 	public static final String OSL_CORE = "core";
 
-	public static final String OSL_META_ENDPOINT = "/v3/versions/osl/%s";
-	public static final String OSL_MODULE_META_ENDPOINT = "/v3/versions/osl/%s/%s/%s";
+	public static final String OSL_VERSION_META_ENDPOINT = "/v3/versions/gen%d/osl/%s";
+	public static String oslVersionMetaEndpoint(int generation, String version) {
+		return String.format(OSL_VERSION_META_ENDPOINT, generation, version);
+	}
+	public static final String OSL_MODULE_VERSION_META_ENDPOINT = "/v3/versions/gen%d/osl/%s/%s/%s";
+	public static String oslModuleVersionMetaEndpoint(int generation, String module, String mc, String version) {
+		return String.format(OSL_MODULE_VERSION_META_ENDPOINT, generation, module, mc, version);
+	}
 
 	public static final String MCP_MAVEN_GROUP = "de.oceanlabs.mcp";
 	public static final String SRG_MAPPINGS = MCP_MAVEN_GROUP + ":mcp:%s:srg@zip";
