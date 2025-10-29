@@ -1,0 +1,20 @@
+name: Build
+on:
+  push:
+    branches:
+      - 'exp/**' 
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/wrapper-validation-action@v2
+
+      - name: setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - run: ./gradlew build --stacktrace
