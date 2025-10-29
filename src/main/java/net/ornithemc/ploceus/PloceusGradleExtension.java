@@ -80,16 +80,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.exceptionsProvider = project.getObjects().property(ExceptionsProvider.class);
 		this.exceptionsProvider.convention(project.provider(() -> {
 			ExceptionsProvider provider;
-			if (loom.getMinecraftProvider().isLegacyVersion()) {
+			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new ExceptionsProvider.Legacy(project, loom, this, getSide().get());
 				} else {
-					VersionDetails details = minecraftVersionDetails();
-					if (details.releaseTime().compareTo(Constants.RELEASE_TIME_B1_0) >= 0) {
-						provider = new ExceptionsProvider.Split(project, loom, this);
-					} else {
-						provider = new ExceptionsProvider.Legacy(project, loom, this, details.client() ? GameSide.CLIENT : GameSide.SERVER);
-					}
+					provider = new ExceptionsProvider.Split(project, loom, this);
 				}
 			} else {
 				provider = new ExceptionsProvider.Simple(project, loom, this);
@@ -101,16 +96,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.signaturesProvider = project.getObjects().property(SignaturesProvider.class);
 		this.signaturesProvider.convention(project.provider(() -> {
 			SignaturesProvider provider;
-			if (loom.getMinecraftProvider().isLegacyVersion()) {
+			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new SignaturesProvider.Legacy(project, loom, this, getSide().get());
 				} else {
-					VersionDetails details = minecraftVersionDetails();
-					if (details.releaseTime().compareTo(Constants.RELEASE_TIME_B1_0) >= 0) {
-						provider = new SignaturesProvider.Split(project, loom, this);
-					} else {
-						provider = new SignaturesProvider.Legacy(project, loom, this, details.client() ? GameSide.CLIENT : GameSide.SERVER);
-					}
+					provider = new SignaturesProvider.Split(project, loom, this);
 				}
 			} else {
 				provider = new SignaturesProvider.Simple(project, loom, this);
@@ -122,16 +112,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.nestsProvider = project.getObjects().property(NestsProvider.class);
 		this.nestsProvider.convention(project.provider(() -> {
 			NestsProvider provider;
-			if (loom.getMinecraftProvider().isLegacyVersion()) {
+			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new NestsProvider.Legacy(project, loom, this, getSide().get());
 				} else {
-					VersionDetails details = minecraftVersionDetails();
-					if (details.releaseTime().compareTo(Constants.RELEASE_TIME_B1_0) >= 0) {
-						provider = new NestsProvider.Split(project, loom, this);
-					} else {
-						provider = new NestsProvider.Legacy(project, loom, this, details.client() ? GameSide.CLIENT : GameSide.SERVER);
-					}
+					provider = new NestsProvider.Split(project, loom, this);
 				}
 			} else {
 				provider = new NestsProvider.Simple(project, loom, this);
