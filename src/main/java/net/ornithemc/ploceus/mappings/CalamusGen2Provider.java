@@ -30,7 +30,7 @@ public abstract class CalamusGen2Provider extends IntermediaryMappingsProvider {
 
 		super.provide(tinyMappings, project);
 
-		if (getIsLegacyMinecraft().get()) {
+		if (getUseSplitOfficialNamespaces().get()) {
 			/*
 			 * Loom expects intermediary files for all pre-1.3 versions to be in
 			 * intermediary -> [clientOfficial, serverOfficial] format, but gen2
