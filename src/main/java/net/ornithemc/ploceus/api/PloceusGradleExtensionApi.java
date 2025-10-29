@@ -64,6 +64,6 @@ public interface PloceusGradleExtensionApi {
 	@Deprecated
 	void serverOnlyMappings();
 
-	void setGeneration(int generation); // TODO: change to a property once gen 2 is the default
+	void setIntermediaryGeneration(int generation); // TODO: change to a property once gen 2 is the default
 
 }

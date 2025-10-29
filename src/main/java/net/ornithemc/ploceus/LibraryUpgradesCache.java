@@ -29,7 +29,7 @@ public class LibraryUpgradesCache {
 	private final Project project;
 	private final PloceusGradleExtension ploceus;
 
-	private Integer generation;
+	private Integer intermediaryGeneration;
 	private String minecraftVersion;
 	private List<Library> libraries;
 	private Path librariesCache;
@@ -39,12 +39,12 @@ public class LibraryUpgradesCache {
 		this.ploceus = ploceus;
 	}
 
-	private int generation() {
-		if (generation == null) {
-			generation = ploceus.getGeneration().get();
+	private int intermediaryGeneration() {
+		if (intermediaryGeneration == null) {
+			intermediaryGeneration = ploceus.getIntermediaryGeneration().get();
 		}
 
-		return generation;
+		return intermediaryGeneration;
 	}
 
 	private String minecraftVersion() {
@@ -83,11 +83,11 @@ public class LibraryUpgradesCache {
 			try {
 				libs = getLibrariesFromCache();
 			} catch (Exception ce) {
-				project.getLogger().warn("unable to read library upgrades from cache for gen" + generation() + " " + minecraftVersion(), ce);
+				project.getLogger().warn("unable to read library upgrades from cache for gen" + intermediaryGeneration() + " " + minecraftVersion(), ce);
 			}
 
 			if (libs == null) {
-				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + generation() + " " + minecraftVersion() + ", and it is not in the cache", me);
+				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + intermediaryGeneration() + " " + minecraftVersion() + ", and it is not in the cache", me);
 			}
 		}
 
@@ -95,7 +95,7 @@ public class LibraryUpgradesCache {
 	}
 
 	private List<Library> getLibrariesFromMeta() throws Exception {
-		String metaUrl = Constants.librariesMetaUrl(minecraftVersion(), generation());
+		String metaUrl = Constants.librariesMetaUrl(minecraftVersion(), intermediaryGeneration());
 
 		try (InputStreamReader ir = new InputStreamReader(new URI(metaUrl).toURL().openStream())) {
 			JsonArray libsJson = GSON.fromJson(ir, JsonArray.class);
@@ -115,7 +115,7 @@ public class LibraryUpgradesCache {
 			try {
 				saveLibrariesToCache(libs);
 			} catch (Exception e) {
-				project.getLogger().warn("unable to save library upgrades for gen" + generation() + " " + minecraftVersion() + " to cache", e);
+				project.getLogger().warn("unable to save library upgrades for gen" + intermediaryGeneration() + " " + minecraftVersion() + " to cache", e);
 			}
 
 			return libs;
@@ -132,7 +132,7 @@ public class LibraryUpgradesCache {
 			return null;
 		}
 
-		String generation = "gen" + generation();
+		String generation = "gen" + intermediaryGeneration();
 		JsonArray libsJson = json.getAsJsonArray(generation);
 
 		if (libsJson == null) {
@@ -161,7 +161,7 @@ public class LibraryUpgradesCache {
 			json = new JsonObject();
 		}
 
-		String generation = "gen" + generation();
+		String generation = "gen" + intermediaryGeneration();
 		JsonArray libsJson = new JsonArray();
 
 		json.add(generation, libsJson);

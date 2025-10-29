@@ -9,7 +9,7 @@ import org.gradle.api.provider.Property;
 
 public abstract class CalamusGen2Provider extends CalamusProvider {
 
-	public abstract Property<Integer> getGeneration();
+	public abstract Property<Integer> getIntermediaryGeneration();
 
 	@Override
 	public void provide(Path tinyMappings, Project project) throws IOException {
@@ -31,6 +31,6 @@ public abstract class CalamusGen2Provider extends CalamusProvider {
 
 	@Override
 	public String getName() {
-		return "calamus-gen" + getGeneration().get() + "-" + NAME;
+		return "calamus-gen" + getIntermediaryGeneration().get() + "-" + NAME;
 	}
 }
