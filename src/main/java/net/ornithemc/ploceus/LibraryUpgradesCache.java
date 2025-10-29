@@ -2,10 +2,10 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,7 +128,7 @@ public class LibraryUpgradesCache {
 
 		try (BufferedReader br = Files.newBufferedReader(libsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (FileNotFoundException e) {
+		} catch (NoSuchFileException e) {
 			return null;
 		}
 
@@ -157,7 +157,7 @@ public class LibraryUpgradesCache {
 
 		try (BufferedReader br = Files.newBufferedReader(libsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (FileNotFoundException e) {
+		} catch (NoSuchFileException e) {
 			json = new JsonObject();
 		}
 
