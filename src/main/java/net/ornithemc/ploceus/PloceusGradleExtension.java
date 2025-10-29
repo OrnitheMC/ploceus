@@ -27,6 +27,7 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.configuration.providers.minecraft.library.Library;
 import net.fabricmc.loom.task.AbstractRemapJarTask;
 import net.fabricmc.loom.util.Constants.Configurations;
 import net.fabricmc.loom.util.ZipUtils;
@@ -60,6 +61,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final Project project;
 	private final LoomGradleExtension loom;
 	private final OslVersionCache oslVersions;
+	private final LibraryUpgradesCache libraryUpgrades;
 	private final Property<ExceptionsProvider> exceptionsProvider;
 	private final Property<SignaturesProvider> signaturesProvider;
 	private final Property<NestsProvider> nestsProvider;
@@ -74,6 +76,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.project = project;
 		this.loom = LoomGradleExtension.get(this.project);
 		this.oslVersions = new OslVersionCache(this.project, this);
+		this.libraryUpgrades = new LibraryUpgradesCache(this.project, this);
 		this.exceptionsProvider = project.getObjects().property(ExceptionsProvider.class);
 		this.exceptionsProvider.convention(project.provider(() -> {
 			ExceptionsProvider provider;
@@ -419,6 +422,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public void disableLibraryUpgrades() {
 		upgradeLibraries.set(false);
+	}
+
+	public List<Library> getLibraryUpgrades() {
+		return libraryUpgrades.getLibraryUpgrades();
 	}
 
 	@Override

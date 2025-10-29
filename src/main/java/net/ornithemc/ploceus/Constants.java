@@ -39,6 +39,11 @@ public class Constants {
 		return generation == 1 ? VERSIONS_MANIFEST_URL_GEN1 : VERSIONS_MANIFEST_URL_GEN2;
 	}
 
+	public static final String LIBRARIES_META_URL = META_URL + "/v3/versions/gen%d/libraries/%s";
+	public static String librariesMetaUrl(String mc, int generation) {
+		return LIBRARIES_META_URL.formatted(generation, mc);
+	}
+
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = MAVEN_GROUP;
 	public static String calamusGen1Mappings(GameSide side) {
 		return CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":calamus-intermediary:%1$s" + side.suffix() + ":v2";
