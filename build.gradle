@@ -17,7 +17,7 @@ tasks.withType(JavaCompile).configureEach {
 
 group 'net.ornithemc'
 archivesBaseName = project.name
-def baseVersion = '1.12'
+def baseVersion = '1.13'
 
 def ENV = System.getenv()
 if (ENV.BUILD_NUMBER) {
