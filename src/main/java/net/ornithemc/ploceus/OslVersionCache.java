@@ -64,8 +64,9 @@ public class OslVersionCache {
 		if (moduleBaseVersionsCache == null) {
 			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			Path userCache = loom.getFiles().getUserCache().toPath();
-			
-			moduleBaseVersionsCache = userCache.resolve("osl-versions.json");
+
+			// avoid conflicts with previous Ploceus versions, which used 'osl-versions.json'
+			moduleBaseVersionsCache = userCache.resolve("osl-base-versions.json");
 		}
 
 		return moduleBaseVersionsCache;
@@ -75,8 +76,9 @@ public class OslVersionCache {
 		if (moduleVersionsCache == null) {
 			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			Path userCache = loom.getFiles().getUserCache().toPath();
-			
-			moduleVersionsCache = userCache.resolve(minecraftVersion()).resolve("osl-module-versions.json");
+
+			// avoid conflicts with previous Ploceus versions, which used 'osl-module-versions.json'
+			moduleVersionsCache = userCache.resolve(minecraftVersion()).resolve("osl-versions.json");
 		}
 
 		return moduleVersionsCache;
