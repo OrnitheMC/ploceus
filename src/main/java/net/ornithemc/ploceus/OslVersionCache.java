@@ -303,19 +303,19 @@ public class OslVersionCache {
 			return null;
 		}
 
-		JsonObject modulesJson = versionsJson.getAsJsonObject(version);
+		JsonObject moduleJson = versionsJson.getAsJsonObject(module);
 
-		if (modulesJson == null) {
+		if (moduleJson == null) {
 			return null;
 		}
 
-		JsonObject moduleVersionsJson = modulesJson.getAsJsonObject(module);
+		JsonObject moduleVersionJson = moduleJson.getAsJsonObject(version);
 
-		if (moduleVersionsJson == null) {
+		if (moduleVersionJson == null) {
 			return null;
 		}
 
-		return moduleVersionsJson.get(side.id()).getAsString();
+		return moduleVersionJson.get(side.id()).getAsString();
 	}
 
 	private void saveModuleVersionToCache(String module, String version, GameSide side, String moduleVersion) throws Exception {
@@ -329,28 +329,28 @@ public class OslVersionCache {
 		}
 
 		String generation = "gen" + intermediaryGeneration();
-		JsonObject versionsJson = json.getAsJsonObject(generation);
-
-		if (versionsJson == null) {
-			versionsJson = new JsonObject();
-			json.add(generation, versionsJson);
-		}
-
-		JsonObject modulesJson = versionsJson.getAsJsonObject(version);
+		JsonObject modulesJson = json.getAsJsonObject(generation);
 
 		if (modulesJson == null) {
 			modulesJson = new JsonObject();
-			versionsJson.add(version, modulesJson);
+			json.add(generation, modulesJson);
 		}
 
-		JsonObject moduleVersionsJson = modulesJson.getAsJsonObject(module);
+		JsonObject moduleJson = modulesJson.getAsJsonObject(module);
 
-		if (moduleVersionsJson == null) {
-			moduleVersionsJson = new JsonObject();
-			modulesJson.add(module, moduleVersionsJson);
+		if (moduleJson == null) {
+			moduleJson = new JsonObject();
+			modulesJson.add(module, moduleJson);
 		}
 
-		moduleVersionsJson.add(side.id(), moduleVersionsJson);
+		JsonObject moduleVersionJson = moduleJson.getAsJsonObject(version);
+
+		if (moduleVersionJson == null) {
+			moduleVersionJson = new JsonObject();
+			moduleJson.add(version, moduleVersionJson);
+		}
+
+		moduleVersionJson.addProperty(side.id(), moduleVersion);
 
 		Files.createDirectories(versionsCache.getParent());
 
