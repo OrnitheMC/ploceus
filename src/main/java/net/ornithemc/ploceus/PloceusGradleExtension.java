@@ -325,10 +325,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public void dependOsl(String configuration, String version, GameSide side) throws Exception {
-		for (Map.Entry<String, String> entry : oslVersions.getDependencies(version).entrySet()) {
+		for (Map.Entry<String, String> entry : oslVersions.getOslModuleBaseVersions(version).entrySet()) {
 			String module = entry.getKey();
 			String baseVersion = entry.getValue();
-			String moduleVersion = oslVersions.getVersion(module, baseVersion, side);
+			String moduleVersion = oslVersions.getOslModuleVersion(module, baseVersion, side);
 
 			// not all modules cover all Minecraft versions
 			// so check if a valid module version exists for
@@ -356,7 +356,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public void dependOslModule(String configuration, String version, GameSide side, String module) throws Exception {
-		String baseVersion = oslVersions.getDependency(version, module);
+		String baseVersion = oslVersions.getOslModuleBaseVersion(version, module);
 
 		if (baseVersion == null) {
 			throw new RuntimeException("osl " + version + " " + module + " for " + side.id() + " does not exist");
@@ -377,7 +377,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public String oslModule(String module, String version, GameSide side) throws Exception {
-		String moduleVersion = oslVersions.getVersion(module, version, side);
+		String moduleVersion = oslVersions.getOslModuleVersion(module, version, side);
 
 		if (moduleVersion == null) {
 			throw new RuntimeException("osl " + module + " version " + version + " for " + side.id() + " does not exist");
@@ -388,7 +388,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private void addOslModuleDependency(String configuration, String module, String version) {
 		project.getDependencies().add(configuration, String.format("%s:%s:%s",
-			Constants.OSL_MAVEN_GROUP,
+			Constants.oslMavenGroup(intermediaryGeneration.get()),
 			module,
 			version));
 	}
