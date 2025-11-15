@@ -4,7 +4,7 @@ import java.util.List;
 
 public record VersionsManifest(List<Version> versions) {
 
-	public static record Version(String id, String details) {
+	public static record Version(String id, String details, String detailsSha1) {
 	}
 
 	public Version getVersion(String id) {

@@ -2,9 +2,9 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -23,9 +23,11 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.configuration.providers.minecraft.ManifestLocations.ManifestLocation;
 import net.fabricmc.loom.configuration.providers.minecraft.library.Library;
 import net.fabricmc.loom.task.AbstractRemapJarTask;
 import net.fabricmc.loom.util.Constants.Configurations;
+import net.fabricmc.loom.util.download.DownloadException;
 
 import net.ornithemc.ploceus.api.GameSide;
 import net.ornithemc.ploceus.api.PloceusGradleExtensionApi;
@@ -48,6 +50,7 @@ import net.ornithemc.ploceus.signatures.SignaturesProvider;
 public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private static final Gson GSON = new GsonBuilder().create();
+	private static final int DEFAULT_INTERMEDIARY_GEN = 1;
 
 	public static PloceusGradleExtension get(Project project) {
 		return (PloceusGradleExtension)project.getExtensions().getByName("ploceus");
@@ -64,8 +67,6 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final Property<Boolean> patchLvts;
 	private final Property<GameSide> side; // gen 1
 	private final Property<Integer> intermediaryGeneration; // gen 2+
-
-	private int nextManifestPriority = -10;
 
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
@@ -141,7 +142,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			return GameSide.MERGED;
 		}));
 		this.intermediaryGeneration = project.getObjects().property(int.class);
-		this.intermediaryGeneration.convention(1);
+		this.intermediaryGeneration.convention(DEFAULT_INTERMEDIARY_GEN);
 
 		apply();
 	}
@@ -186,7 +187,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			});
 		});
 
-		switchToGen1();
+		this.setIntermediaryGeneration(DEFAULT_INTERMEDIARY_GEN);
 	}
 
 	public List<Path> getLibraries() {
@@ -238,8 +239,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				intermediaryGeneration.get() == 1
 					? FileSpec.create(Constants.calamusGen1Mappings(mc, side.get()))
 					: FileSpec.create(Constants.calamusGen2Mappings(mc, intermediaryGeneration.get())),
-				FileSpec.create(String.format(Constants.SRG_MAPPINGS, mc)),
-				FileSpec.create(String.format(Constants.MCP_MAPPINGS, channel, build, mc))
+				FileSpec.create(Constants.srgMappings(mc)),
+				FileSpec.create(Constants.mcpMappings(channel, build, mc))
 			));
 		});
 	}
@@ -256,7 +257,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				intermediaryGeneration.get() == 1
 					? FileSpec.create(Constants.calamusGen1Mappings(mc, side.get()))
 					: FileSpec.create(Constants.calamusGen2Mappings(mc, intermediaryGeneration.get())),
-				FileSpec.create(String.format(Constants.FORGE_SRC, mc, version))
+				FileSpec.create(Constants.forgeSrc(mc, version))
 			));
 		});
 	}
@@ -422,34 +423,6 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		side.set(GameSide.SERVER);
 	}
 
-	private void switchToGen1() {
-		loom.setIntermediateMappingsProvider(CalamusGen1Provider.class, provider -> {
-			provider.getSide()
-				.convention(side)
-				.finalizeValueOnRead();
-			provider.getIntermediaryUrl()
-				.convention(project.provider(() -> Constants.calamusGen1Url(provider.getSide().get())))
-				.finalizeValueOnRead();
-			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
-		});
-
-		loom.getVersionsManifests().add(Constants.VERSIONS_MANIFEST_NAME_GEN1, Constants.VERSIONS_MANIFEST_URL_GEN1, nextManifestPriority--);
-	}
-
-	private void switchToGen2() {
-		loom.setIntermediateMappingsProvider(CalamusGen2Provider.class, provider -> {
-			provider.getIntermediaryGeneration()
-				.convention(intermediaryGeneration)
-				.finalizeValueOnRead();
-			provider.getIntermediaryUrl()
-				.convention(project.provider(() -> Constants.calamusGen2Url(provider.getIntermediaryGeneration().get())))
-				.finalizeValueOnRead();
-			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
-		});
-
-		loom.getVersionsManifests().add(Constants.VERSIONS_MANIFEST_NAME_GEN2, Constants.VERSIONS_MANIFEST_URL_GEN2, nextManifestPriority--);
-	}
-
 	public Property<GameSide> getSide() {
 		return side;
 	}
@@ -460,12 +433,58 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public void setIntermediaryGeneration(int generation) {
+		int oldGeneration = this.intermediaryGeneration.get();
 		this.intermediaryGeneration.set(generation);
 
-		if (generation == 1) {
-			switchToGen1();
+		switchedIntermediaryGen(oldGeneration, generation);
+	}
+
+	private void switchedIntermediaryGen(int from, int to) {
+		switchVersionsManifest(from);
+		switchIntermediateMappingsProvider();
+	}
+
+	private void switchVersionsManifest(int oldIntermediaryGen) {
+		String oldManifestName = Constants.versionsManifestName(oldIntermediaryGen);
+
+		// remove the previous manifest
+		for (Iterator<ManifestLocation> it = loom.getVersionsManifests().iterator(); it.hasNext(); ) {
+			ManifestLocation location = it.next();
+
+			if (location.name().equals(oldManifestName)) {
+				it.remove();
+			}
+		}
+
+		// replace with the new one
+		loom.getVersionsManifests().add(
+			Constants.versionsManifestName(intermediaryGeneration.get()),
+			Constants.versionsManifestUrl(intermediaryGeneration.get()),
+			-10
+		);
+	}
+
+	private void switchIntermediateMappingsProvider() {
+		if (intermediaryGeneration.get() == 1) {
+			loom.setIntermediateMappingsProvider(CalamusGen1Provider.class, provider -> {
+				provider.getSide()
+					.convention(side)
+					.finalizeValueOnRead();
+				provider.getIntermediaryUrl()
+					.convention(project.provider(() -> Constants.calamusGen1Url(provider.getSide().get())))
+					.finalizeValueOnRead();
+				provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
+			});
 		} else {
-			switchToGen2();
+			loom.setIntermediateMappingsProvider(CalamusGen2Provider.class, provider -> {
+				provider.getIntermediaryGeneration()
+					.convention(intermediaryGeneration)
+					.finalizeValueOnRead();
+				provider.getIntermediaryUrl()
+					.convention(project.provider(() -> Constants.calamusGen2Url(provider.getIntermediaryGeneration().get())))
+					.finalizeValueOnRead();
+				provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
+			});
 		}
 	}
 
@@ -485,22 +504,26 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		Path manifestCache = userCache.resolve(Constants.versionsManifestName(intermediaryGeneration.get()) + "_versions_manifest.json");
 
 		try {
-			if (!Files.exists(manifestCache)) {
+			// always try to download - the manifest may have changed...
+			try {
 				loom.download(manifestUrl).downloadPath(manifestCache);
+			} catch (DownloadException e) {
+				if (!Files.exists(manifestCache)) {
+					throw new RuntimeException("could not download versions manifest, and no cache exists!", e);
+				}
 			}
 
-			try (BufferedReader br = new BufferedReader(new FileReader(manifestCache.toFile()))) {
+			try (BufferedReader br = Files.newBufferedReader(manifestCache)) {
 				VersionsManifest manifest = GSON.fromJson(br, VersionsManifest.class);
 				VersionsManifest.Version version = manifest.getVersion(versionId);
 
 				String detailsUrl = version.details();
+				String detailsSha1 = version.detailsSha1();
 				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-				if (!Files.exists(detailsCache)) {
-					loom.download(detailsUrl).downloadPath(detailsCache);
-				}
+				loom.download(detailsUrl).sha1(detailsSha1).downloadPath(detailsCache);
 
-				try (BufferedReader _br = new BufferedReader(new FileReader(detailsCache.toFile()))) {
+				try (BufferedReader _br = Files.newBufferedReader(detailsCache)) {
 					return GSON.fromJson(_br, VersionDetails.class);
 				}
 			}

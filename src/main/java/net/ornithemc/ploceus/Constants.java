@@ -1,5 +1,8 @@
 package net.ornithemc.ploceus;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import net.ornithemc.ploceus.api.GameSide;
 
 public class Constants {
@@ -26,22 +29,20 @@ public class Constants {
 	public static final String CLIENT_NESTS_CONFIGURATION = "clientNests";
 	public static final String SERVER_NESTS_CONFIGURATION = "serverNests";
 
-	public static final String VERSIONS_MANIFEST_NAME_GEN1 = "skyrising";
-	public static final String VERSIONS_MANIFEST_URL_GEN1 = "https://skyrising.github.io/mc-versions/version_manifest.json";
-	public static final String VERSIONS_MANIFEST_NAME_GEN2 = "ornithe";
-	public static final String VERSIONS_MANIFEST_URL_GEN2 = "https://ornithemc.net/mc-versions/version_manifest.json";
+	public static final String VERSIONS_MANIFEST_NAME = "ornithe-gen%d";
+	public static final String VERSIONS_MANIFEST_URL = "https://ornithemc.net/mc-versions/gen%d/version_manifest.json";
 
 	public static String versionsManifestName(int generation) {
-		return generation == 1 ? VERSIONS_MANIFEST_NAME_GEN1 : VERSIONS_MANIFEST_NAME_GEN2;
+		return String.format(VERSIONS_MANIFEST_NAME, generation);
 	}
 
 	public static String versionsManifestUrl(int generation) {
-		return generation == 1 ? VERSIONS_MANIFEST_URL_GEN1 : VERSIONS_MANIFEST_URL_GEN2;
+		return String.format(VERSIONS_MANIFEST_URL, generation);
 	}
 
 	public static final String LIBRARIES_META_URL = META_URL + "/v3/versions/gen%d/libraries/%s";
 	public static String librariesMetaUrl(String mc, int generation) {
-		return LIBRARIES_META_URL.formatted(generation, mc);
+		return LIBRARIES_META_URL.formatted(generation, URLEncoder.encode(mc, StandardCharsets.UTF_8));
 	}
 
 	public static final String CALAMUS_INTERMEDIARY_MAVEN_GROUP = MAVEN_GROUP;
@@ -49,7 +50,7 @@ public class Constants {
 		return CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":calamus-intermediary:%1$s" + side.suffix() + ":v2";
 	}
 	public static String calamusGen1Mappings(String mc, GameSide side) {
-		return calamusGen1Mappings(side).formatted(mc);
+		return calamusGen1Mappings(side).formatted(URLEncoder.encode(mc, StandardCharsets.UTF_8));
 	}
 	public static String calamusGen1Url(GameSide side) {
 		return MAVEN_URL + "/net/ornithemc/calamus-intermediary/%1$s" + side.suffix() + "/calamus-intermediary-%1$s" + side.suffix() + "-v2.jar";
@@ -58,7 +59,7 @@ public class Constants {
 		return CALAMUS_INTERMEDIARY_MAVEN_GROUP + ":calamus-intermediary-gen" + generation + ":%1$s:v2";
 	}
 	public static String calamusGen2Mappings(String mc, int generation) {
-		return calamusGen2Mappings(generation).formatted(mc);
+		return calamusGen2Mappings(generation).formatted(URLEncoder.encode(mc, StandardCharsets.UTF_8));
 	}
 	public static String calamusGen2Url(int generation) {
 		return MAVEN_URL + "/net/ornithemc/calamus-intermediary-gen" + generation + "/%1$s/calamus-intermediary-gen" + generation + "-%1$s-v2.jar";
@@ -67,29 +68,29 @@ public class Constants {
 	public static final String FEATHER_MAVEN_GROUP = MAVEN_GROUP;
 	public static final String FEATHER_GEN1_MAPPINGS = FEATHER_MAVEN_GROUP + ":feather:%s%s+build.%s:v2";
 	public static String featherGen1Mappings(String mc, GameSide side, String build) {
-		return String.format(FEATHER_GEN1_MAPPINGS, mc, side.suffix(), build);
+		return String.format(FEATHER_GEN1_MAPPINGS, URLEncoder.encode(mc, StandardCharsets.UTF_8), side.suffix(), build);
 	}
 	public static final String FEATHER_GEN2_MAPPINGS = FEATHER_MAVEN_GROUP + ":feather-gen%s:%s+build.%s:v2";
 	public static String featherGen2Mappings(int generation, String mc, String build) {
-		return String.format(FEATHER_GEN2_MAPPINGS, generation, mc, build);
+		return String.format(FEATHER_GEN2_MAPPINGS, generation, URLEncoder.encode(mc, StandardCharsets.UTF_8), build);
 	}
 
 	public static final String RAVEN_MAVEN_GROUP = MAVEN_GROUP;
 	public static final String RAVEN = RAVEN_MAVEN_GROUP + ":raven:%s%s+build.%s";
 	public static String raven(String mc, GameSide side, String build) {
-		return String.format(RAVEN, mc, side.suffix(), build);
+		return String.format(RAVEN, URLEncoder.encode(mc, StandardCharsets.UTF_8), side.suffix(), build);
 	}
 
 	public static final String SPARROW_MAVEN_GROUP = MAVEN_GROUP;
 	public static final String SPARROW = SPARROW_MAVEN_GROUP + ":sparrow:%s%s+build.%s";
 	public static String sparrow(String mc, GameSide side, String build) {
-		return String.format(SPARROW, mc, side.suffix(), build);
+		return String.format(SPARROW, URLEncoder.encode(mc, StandardCharsets.UTF_8), side.suffix(), build);
 	}
 
 	public static final String NESTS_MAVEN_GROUP = MAVEN_GROUP;
 	public static final String NESTS = NESTS_MAVEN_GROUP + ":nests:%s%s+build.%s";
 	public static String nests(String mc, GameSide side, String build) {
-		return String.format(NESTS, mc, side.suffix(), build);
+		return String.format(NESTS, URLEncoder.encode(mc, StandardCharsets.UTF_8), side.suffix(), build);
 	}
 
 	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
@@ -108,16 +109,22 @@ public class Constants {
 	}
 	public static final String OSL_MODULE_VERSION_META_ENDPOINT = "/v3/versions/gen%d/osl/%s/%s/%s";
 	public static String oslModuleVersionMetaEndpoint(int generation, String module, String mc, String version) {
-		return String.format(OSL_MODULE_VERSION_META_ENDPOINT, generation, module, mc, version);
+		return String.format(OSL_MODULE_VERSION_META_ENDPOINT, generation, module, URLEncoder.encode(mc, StandardCharsets.UTF_8), version);
 	}
 
 	public static final String MCP_MAVEN_GROUP = "de.oceanlabs.mcp";
 	public static final String SRG_MAPPINGS = MCP_MAVEN_GROUP + ":mcp:%s:srg@zip";
+	public static String srgMappings(String mc) {
+		return String.format(SRG_MAPPINGS, URLEncoder.encode(mc, StandardCharsets.UTF_8));
+	}
 	public static final String MCP_MAPPINGS = MCP_MAVEN_GROUP + ":mcp_%s:%s-%s@zip";
+	public static String mcpMappings(String channel, String build, String mc) {
+		return String.format(MCP_MAPPINGS, channel, build, URLEncoder.encode(mc, StandardCharsets.UTF_8));
+	}
 
 	public static final String FORGE_MAVEN_GROUP = "net.minecraftforge.mcp";
 	public static final String FORGE_SRC = FORGE_MAVEN_GROUP + ":forge:%s-%s:src@zip";
-
-	public static final String RELEASE_TIME_B1_0 = "2010-12-20T17:28:00+00:00";
-
+	public static String forgeSrc(String mc, String version) {
+		return String.format(FORGE_SRC, URLEncoder.encode(mc, StandardCharsets.UTF_8), version);
+	}
 }
