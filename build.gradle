@@ -15,11 +15,13 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
 }
 
-group 'net.ornithemc'
-archivesBaseName = project.name
+def ENV = System.getenv()
 def baseVersion = '1.13'
 
-def ENV = System.getenv()
+group 'net.ornithemc'
+base {
+	archivesName = project.name
+}
 if (ENV.BUILD_NUMBER) {
 	version = baseVersion + '.' + ENV.BUILD_NUMBER
 } else {
@@ -87,7 +89,7 @@ publishing {
 	publications {
 		plugin(MavenPublication) { publication ->
 			groupId project.group
-			artifactId project.archivesBaseName
+			artifactId project.base.archivesName.get()
 			version project.version
 
 			from components.java
@@ -96,7 +98,7 @@ publishing {
 		// Also publish a snapshot so people can use the latest version if they wish
 		snapshot(MavenPublication) { publication ->
 			groupId project.group
-			artifactId project.archivesBaseName
+			artifactId project.base.archivesName.get()
 			version baseVersion + '-SNAPSHOT'
 
 			from components.java
