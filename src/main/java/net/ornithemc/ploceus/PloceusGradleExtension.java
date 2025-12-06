@@ -166,6 +166,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		loom.addMinecraftJarProcessor(NesterProcessor.class, this);
 
 		project.afterEvaluate(project -> {
+			// why is there no afterSuccessfulEvaluate or something?
+			if (project.getState().getFailure() != null) {
+				return;
+			}
+
 			project.getTasks().configureEach(task -> {
 				if (task instanceof AbstractRemapJarTask remapJarTask) {
 					String dstNs = remapJarTask.getTargetNamespace().get();
