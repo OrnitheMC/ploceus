@@ -70,10 +70,12 @@ public class NestsProvider {
 		}
 
 		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		Path path = minecraft.path(nestsName + "-" + nestsVersion + ".nest");
+		Path dir = minecraft.path("nests");
+		Path path = dir.resolve(nestsName + "-" + nestsVersion + ".nest");
 
 		if (Files.notExists(path) || minecraft.refreshDeps()) {
 			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(nestsJar.get().toPath())) {
+				Files.createDirectories(dir);
 				Files.copy(delegate.getPath("nests/mappings.nest"), path, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new RuntimeException("unable to extract nests!");
