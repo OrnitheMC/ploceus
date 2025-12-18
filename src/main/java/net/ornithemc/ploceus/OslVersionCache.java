@@ -255,7 +255,7 @@ public class OslVersionCache {
 	}
 
 	private String getModuleVersionFromMeta(String module, String version, GameSide side) throws Exception {
-		String metaUrl = Constants.META_URL + Constants.oslModuleVersionMetaEndpoint(intermediaryGeneration(), module, minecraftVersion(), version + side.suffix());
+		String metaUrl = Constants.META_URL + Constants.oslModuleVersionMetaEndpoint(intermediaryGeneration(), module, minecraftVersion(), version);
 
 		try (InputStreamReader ir = new InputStreamReader(new URI(metaUrl).toURL().openStream())) {
 			JsonArray modulesJson = GSON.fromJson(ir, JsonArray.class);
@@ -315,7 +315,13 @@ public class OslVersionCache {
 			return null;
 		}
 
-		return moduleVersionJson.get(side.id()).getAsString();
+		JsonElement moduleVersion = moduleVersionJson.get(side.id());
+
+		if (moduleVersion == null) {
+			return null;
+		}
+
+		return moduleVersion.getAsString();
 	}
 
 	private void saveModuleVersionToCache(String module, String version, GameSide side, String moduleVersion) throws Exception {
