@@ -315,7 +315,13 @@ public class OslVersionCache {
 			return null;
 		}
 
-		return moduleVersionJson.get(side.id()).getAsString();
+		JsonElement moduleVersion = moduleVersionJson.get(side.id());
+
+		if (moduleVersion == null) {
+			return null;
+		}
+
+		return moduleVersion.getAsString();
 	}
 
 	private void saveModuleVersionToCache(String module, String version, GameSide side, String moduleVersion) throws Exception {
