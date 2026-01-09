@@ -38,6 +38,13 @@ public class PloceusRepositoryPlugin implements Plugin<PluginAware> {
 			repo.setUrl(Constants.QUILT_MAVEN_URL);
 		});
 		repositories.maven(repo -> {
+			repo.setName(Constants.LEGACY_FABRIC_MAVEN_NAME);
+			repo.setUrl(Constants.LEGACY_FABRIC_MAVEN_URL);
+			repo.content(content -> {
+				content.includeGroup("org.lwjgl.lwjgl");
+			});
+		});
+		repositories.maven(repo -> {
 			repo.setName(Constants.FORGE_MAVEN_NAME);
 			repo.setUrl(Constants.FORGE_MAVEN_URL);
 			repo.metadataSources(sources -> {
