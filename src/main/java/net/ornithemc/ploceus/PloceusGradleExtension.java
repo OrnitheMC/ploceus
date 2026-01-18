@@ -263,6 +263,13 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	}
 
 	@Override
+	public Dependency mappings(Object file) {
+		return layeredMappings(builder -> {
+			builder.mappings(file);
+		});
+	}
+
+	@Override
 	public Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action) {
 		return loom.layered(builder -> {
 			action.execute(builder);
