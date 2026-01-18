@@ -17,6 +17,8 @@ public interface PloceusGradleExtensionApi {
 
 	Dependency mcpForgeMappings(String mc, String version);
 
+	Dependency mappings(Object file);
+
 	Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action);
 
 	Dependency raven(String build);
