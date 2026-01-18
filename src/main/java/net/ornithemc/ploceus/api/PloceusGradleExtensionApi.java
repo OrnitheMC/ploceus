@@ -1,6 +1,9 @@
 package net.ornithemc.ploceus.api;
 
+import org.gradle.api.Action;
 import org.gradle.api.artifacts.Dependency;
+
+import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 
 public interface PloceusGradleExtensionApi {
 
@@ -13,6 +16,8 @@ public interface PloceusGradleExtensionApi {
 	Dependency mcpForgeMappings(String version);
 
 	Dependency mcpForgeMappings(String mc, String version);
+
+	Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action);
 
 	Dependency raven(String build);
 
