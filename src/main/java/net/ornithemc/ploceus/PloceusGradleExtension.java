@@ -262,7 +262,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		});
 	}
 
-	private Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action) {
+	@Override
+	public Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action) {
 		return loom.layered(builder -> {
 			action.execute(builder);
 			builder.addLayer(new NestsMappingSpec(this));
