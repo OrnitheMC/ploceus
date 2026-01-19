@@ -185,6 +185,12 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 					}
 				}
 			});
+
+			loom.runs(runs -> {
+				runs.all(run -> {
+					run.vmArgs("-Dfabric.gameVersion=" + minecraftVersion());
+				});
+			});
 		});
 
 		this.setIntermediaryGeneration(DEFAULT_INTERMEDIARY_GEN);
