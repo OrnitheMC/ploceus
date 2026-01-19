@@ -72,10 +72,12 @@ public class ExceptionsProvider {
 		}
 
 		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		Path path = minecraft.path(excsName + "-" + excsVersion + ".excs");
+		Path dir = minecraft.path("exceptions");
+		Path path = dir.resolve(excsName + "-" + excsVersion + ".excs");
 
 		if (Files.notExists(path) || minecraft.refreshDeps()) {
 			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(excsJar.get().toPath())) {
+				Files.createDirectories(dir);
 				Files.copy(delegate.getPath("exceptions/mappings.excs"), path, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new RuntimeException("unable to extract exceptions!");

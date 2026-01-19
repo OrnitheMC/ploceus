@@ -73,10 +73,12 @@ public class SignaturesProvider {
 		}
 
 		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		Path path = minecraft.path(sigsName + "-" + sigsVersion + ".sigs");
+		Path dir = minecraft.path("signatures");
+		Path path = dir.resolve(sigsName + "-" + sigsVersion + ".sigs");
 
 		if (Files.notExists(path) || minecraft.refreshDeps()) {
 			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(sigsJar.get().toPath())) {
+				Files.createDirectories(dir);
 				Files.copy(delegate.getPath("signatures/mappings.sigs"), path, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				throw new RuntimeException("unable to extract signatures!");
