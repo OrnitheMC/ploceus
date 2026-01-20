@@ -229,7 +229,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				intermediaryGeneration.get() == 1
 					? Constants.featherGen1Mappings(minecraftVersion(), side.get(), build)
 					: Constants.featherGen2Mappings(intermediaryGeneration.get(), minecraftVersion(), build)
-			));
+			), spec -> {
+				if (intermediaryGeneration.get() > 1) {
+					spec.containsUnpick();
+				}
+			});
 		});
 	}
 
