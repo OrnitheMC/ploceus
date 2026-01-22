@@ -2,6 +2,7 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
@@ -77,21 +78,60 @@ public class LibraryUpgradesCache {
 	private List<Library> getLibraries() {
 		List<Library> libs = null;
 
-		try {
-			libs = getLibrariesFromMeta();
-		} catch (Exception me) {
+		Exception me = null;
+		Exception ce = null;
+
+		boolean prioritizeCache = shouldPrioritizeCacheForLibraries();
+
+		if (prioritizeCache) {
 			try {
 				libs = getLibrariesFromCache();
-			} catch (Exception ce) {
-				project.getLogger().warn("unable to read library upgrades from cache for gen" + intermediaryGeneration() + " " + minecraftVersion(), ce);
-			}
-
-			if (libs == null) {
-				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + intermediaryGeneration() + " " + minecraftVersion() + ", and it is not in the cache", me);
+			} catch (Exception e) {
+				ce = e;
 			}
 		}
 
+		if (libs == null) {
+			try {
+				libs = getLibrariesFromMeta();
+			} catch (Exception e) {
+				me = e;
+			}
+		}
+
+		if (libs == null) {
+			try {
+				libs = getLibrariesFromCache();
+			} catch (Exception e) {
+				ce = e;
+			}
+		}
+
+		if (libs == null) {
+			if (ce != null) {
+				project.getLogger().warn("unable to read library upgrades from cache for gen" + intermediaryGeneration() + " " + minecraftVersion(), ce);
+			}
+
+			throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + intermediaryGeneration() + " " + minecraftVersion() + ", and it is not in the cache", me);
+		}
+
 		return libs;
+	}
+
+	private boolean shouldPrioritizeCacheForLibraries() {
+		Path libsCache = librariesCache();
+
+		try {
+			return Files.exists(libsCache) && !CacheFiles.isStale(libsCache, CacheFiles.ONE_DAY);
+		} catch (IOException e) {
+			try {
+				Files.deleteIfExists(libsCache);
+			} catch (IOException de) {
+				throw new IllegalStateException("unable to delete corrupt cache file", e);
+			}
+
+			return false;
+		}
 	}
 
 	private List<Library> getLibrariesFromMeta() throws Exception {

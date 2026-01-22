@@ -2,6 +2,7 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
@@ -101,21 +102,60 @@ public class OslVersionCache {
 	private Map<String, String> getModuleBaseVersions(String version) {
 		Map<String, String> baseVersions = null;
 
-		try {
-			baseVersions = getModuleBaseVersionsFromMeta(version);
-		} catch (Exception me) {
+		Exception me = null;
+		Exception ce = null;
+
+		boolean prioritizeCache = shouldPrioritizeCacheForModuleBaseVersions();
+
+		if (prioritizeCache) {
 			try {
 				baseVersions = getModuleBaseVersionsFromCache(version);
-			} catch (Exception ce) {
-				project.getLogger().warn("unable to read OSL module base versions from cache for gen" + intermediaryGeneration() + " " + version, ce);
-			}
-
-			if (baseVersions == null) {
-				throw new IllegalStateException("unable to fetch OSL module base versions from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+			} catch (Exception e) {
+				ce = e;
 			}
 		}
 
+		if (baseVersions == null) {
+			try {
+				baseVersions = getModuleBaseVersionsFromMeta(version);
+			} catch (Exception e) {
+				me = e;
+			}
+		}
+
+		if (baseVersions == null) {
+			try {
+				baseVersions = getModuleBaseVersionsFromCache(version);
+			} catch (Exception e) {
+				ce = e;
+			}
+		}
+
+		if (baseVersions == null) {
+			if (ce != null) {
+				project.getLogger().warn("unable to read OSL module base versions from cache for gen" + intermediaryGeneration() + " " + version, ce);
+			}
+
+			throw new IllegalStateException("unable to fetch OSL module base versions from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+		}
+
 		return baseVersions;
+	}
+
+	private boolean shouldPrioritizeCacheForModuleBaseVersions() {
+		Path baseVersionsCache = moduleBaseVersionsCache();
+
+		try {
+			return Files.exists(baseVersionsCache) && !CacheFiles.isStale(baseVersionsCache, CacheFiles.ONE_DAY);
+		} catch (IOException e) {
+			try {
+				Files.deleteIfExists(baseVersionsCache);
+			} catch (IOException de) {
+				throw new IllegalStateException("unable to delete corrupt cache file", e);
+			}
+
+			return false;
+		}
 	}
 
 	private Map<String, String> getModuleBaseVersionsFromMeta(String version) throws Exception {
@@ -237,21 +277,60 @@ public class OslVersionCache {
 	private String getModuleVersion(String module, String version, GameSide side) {
 		String moduleVersion = null;
 
-		try {
-			moduleVersion = getModuleVersionFromMeta(module, version, side);
-		} catch (Exception me) {
+		Exception me = null;
+		Exception ce = null;
+
+		boolean prioritizeCache = shouldPrioritizeCacheForModuleVersions();
+
+		if (prioritizeCache) {
 			try {
 				moduleVersion = getModuleVersionFromCache(module, version, side);
-			} catch (Exception ce) {
-				project.getLogger().warn("unable to read OSL module version from cache for gen" + intermediaryGeneration() + " " + module + " " + version, ce);
-			}
-
-			if (moduleVersion == null) {
-				throw new IllegalStateException("unable to fetch OSL module version from meta for gen" + intermediaryGeneration() + " " + module + " " + version + ", and it is not in the cache", me);
+			} catch (Exception e) {
+				ce = e;
 			}
 		}
 
+		if (moduleVersion == null) {
+			try {
+				moduleVersion = getModuleVersionFromMeta(module, version, side);
+			} catch (Exception e) {
+				me = e;
+			}
+		}
+
+		if (moduleVersion == null) {
+			try {
+				moduleVersion = getModuleVersionFromCache(module, version, side);
+			} catch (Exception e) {
+				ce = e;
+			}
+		}
+
+		if (moduleVersion == null) {
+			if (ce != null) {
+				project.getLogger().warn("unable to read OSL module version from cache for gen" + intermediaryGeneration() + " " + version, ce);
+			}
+
+			throw new IllegalStateException("unable to fetch OSL module version from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+		}
+
 		return moduleVersion;
+	}
+
+	private boolean shouldPrioritizeCacheForModuleVersions() {
+		Path versionsCache = moduleVersionsCache();
+
+		try {
+			return Files.exists(versionsCache) && !CacheFiles.isStale(versionsCache, CacheFiles.ONE_DAY);
+		} catch (IOException e) {
+			try {
+				Files.deleteIfExists(versionsCache);
+			} catch (IOException de) {
+				throw new IllegalStateException("unable to delete corrupt cache file", e);
+			}
+
+			return false;
+		}
 	}
 
 	private String getModuleVersionFromMeta(String module, String version, GameSide side) throws Exception {
