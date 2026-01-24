@@ -111,8 +111,9 @@ public class LibraryUpgradesCache {
 			if (ce != null) {
 				project.getLogger().warn("unable to read library upgrades from cache for gen" + intermediaryGeneration() + " " + minecraftVersion(), ce);
 			}
-
-			throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + intermediaryGeneration() + " " + minecraftVersion() + ", and it is not in the cache", me);
+			if (me != null) {
+				throw new IllegalStateException("unable to fetch library upgrades from meta for gen" + intermediaryGeneration() + " " + minecraftVersion() + ", and it is not in the cache", me);
+			}
 		}
 
 		return libs;
