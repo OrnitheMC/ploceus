@@ -135,8 +135,9 @@ public class OslVersionCache {
 			if (ce != null) {
 				project.getLogger().warn("unable to read OSL module base versions from cache for gen" + intermediaryGeneration() + " " + version, ce);
 			}
-
-			throw new IllegalStateException("unable to fetch OSL module base versions from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+			if (me != null) {
+				throw new IllegalStateException("unable to fetch OSL module base versions from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+			}
 		}
 
 		return baseVersions;
@@ -310,8 +311,9 @@ public class OslVersionCache {
 			if (ce != null) {
 				project.getLogger().warn("unable to read OSL module version from cache for gen" + intermediaryGeneration() + " " + version, ce);
 			}
-
-			throw new IllegalStateException("unable to fetch OSL module version from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+			if (me != null) {
+				throw new IllegalStateException("unable to fetch OSL module version from meta for gen" + intermediaryGeneration() + " " + version + ", and it is not in the cache", me);
+			}
 		}
 
 		return moduleVersion;
