@@ -225,7 +225,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public Dependency featherMappings(String build) {
 		return layeredMappings(builder -> {
-			builder.mappings(project.getDependencies().create(
+			builder.mappings(FileSpec.create(
 				intermediaryGeneration.get() == 1
 					? Constants.featherGen1Mappings(minecraftVersion(), side.get(), build)
 					: Constants.featherGen2Mappings(intermediaryGeneration.get(), minecraftVersion(), build)
