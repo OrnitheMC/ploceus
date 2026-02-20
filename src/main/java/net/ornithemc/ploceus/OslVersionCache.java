@@ -45,6 +45,10 @@ public class OslVersionCache {
 		this.moduleVersions = new HashMap<>();
 	}
 
+	private boolean forcedRefresh() {
+		return this.project.getGradle().getStartParameter().isRefreshDependencies();
+	}
+
 	private int intermediaryGeneration() {
 		if (intermediaryGeneration == null) {
 			intermediaryGeneration = ploceus.getIntermediaryGeneration().get();
@@ -147,7 +151,7 @@ public class OslVersionCache {
 		Path baseVersionsCache = moduleBaseVersionsCache();
 
 		try {
-			return Files.exists(baseVersionsCache) && !CacheFiles.isStale(baseVersionsCache, CacheFiles.ONE_DAY);
+			return !forcedRefresh() && Files.exists(baseVersionsCache) && !CacheFiles.isStale(baseVersionsCache, CacheFiles.ONE_DAY);
 		} catch (IOException e) {
 			try {
 				Files.deleteIfExists(baseVersionsCache);
@@ -323,7 +327,7 @@ public class OslVersionCache {
 		Path versionsCache = moduleVersionsCache();
 
 		try {
-			return Files.exists(versionsCache) && !CacheFiles.isStale(versionsCache, CacheFiles.ONE_DAY);
+			return !forcedRefresh() && Files.exists(versionsCache) && !CacheFiles.isStale(versionsCache, CacheFiles.ONE_DAY);
 		} catch (IOException e) {
 			try {
 				Files.deleteIfExists(versionsCache);

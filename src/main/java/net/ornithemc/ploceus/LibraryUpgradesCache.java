@@ -40,6 +40,10 @@ public class LibraryUpgradesCache {
 		this.ploceus = ploceus;
 	}
 
+	private boolean forcedRefresh() {
+		return this.project.getGradle().getStartParameter().isRefreshDependencies();
+	}
+
 	private int intermediaryGeneration() {
 		if (intermediaryGeneration == null) {
 			intermediaryGeneration = ploceus.getIntermediaryGeneration().get();
@@ -123,7 +127,7 @@ public class LibraryUpgradesCache {
 		Path libsCache = librariesCache();
 
 		try {
-			return Files.exists(libsCache) && !CacheFiles.isStale(libsCache, CacheFiles.ONE_DAY);
+			return !forcedRefresh() && Files.exists(libsCache) && !CacheFiles.isStale(libsCache, CacheFiles.ONE_DAY);
 		} catch (IOException e) {
 			try {
 				Files.deleteIfExists(libsCache);
