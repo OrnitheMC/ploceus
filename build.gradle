@@ -53,7 +53,7 @@ dependencies {
 	compileOnly("org.ow2.asm:asm-util:9.9")
 	compileOnly("net.fabricmc:mapping-io:0.8.0")
 
-	implementation("net.ornithemc:mapping-utils:0.16.1")
+	implementation("net.ornithemc:mapping-utils:0.19.2")
 	implementation("net.ornithemc:condor:1.4.5")
 	implementation("net.ornithemc:exceptor:1.1.0")
 	implementation("net.ornithemc:preen:1.1.0");
