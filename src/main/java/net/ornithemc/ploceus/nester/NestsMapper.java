@@ -38,7 +38,7 @@ public class NestsMapper {
 			String enclClassName = mapOuterName(nest.className, nest.enclClassName);
 			String enclMethodName = (nest.enclMethodName == null) ? null : mapMethodName(nest.enclClassName, nest.enclMethodName, nest.enclMethodDesc);
 			String enclMethodDesc = (nest.enclMethodName == null) ? null : mapMethodDesc(nest.enclClassName, nest.enclMethodName, nest.enclMethodDesc);
-			String innerName = mapInnerName(nest.className, nest.innerName);
+			String innerName = mapInnerName(nest.className, nest.enclClassName, nest.innerName);
 			int access = nest.access;
 
 			this.mappedNests.add(new Nest(type, className, enclClassName, enclMethodName, enclMethodDesc, innerName, access));
@@ -76,14 +76,24 @@ public class NestsMapper {
 		return mapClassName(enclClassName);
 	}
 
-	private String mapInnerName(String className, String innerName) {
+	private String mapInnerName(String className, String enclClassName, String innerName) {
+		String mappedClassName = mapClassName(className);
+
+		if (mappedClassName.equals(className)) {
+			// class name maps to itself, keep given inner name
+			return innerName;
+		}
+
 		if (named) {
-			String mappedClassName = mapClassName(className);
 			int idx = mappedClassName.lastIndexOf('$');
 
 			if (idx > 0) {
-				// provided mappings already apply nesting
-				return mappedClassName.substring(idx + 1);
+				String mappedEnclClassName = mapClassName(enclClassName);
+
+				if (idx == mappedEnclClassName.length() && mappedClassName.startsWith(mappedEnclClassName)) {
+					// provided mappings already apply nesting
+					return mappedClassName.substring(idx + 1);
+				}
 			}
 		}
 
@@ -92,9 +102,6 @@ public class NestsMapper {
 		while (idx < innerName.length() && Character.isDigit(innerName.charAt(idx))) {
 			idx++;
 		}
-
-		String mappedName = mapClassName(className);
-
 		if (idx < innerName.length()) {
 			// local classes have a number prefix
 			String prefix = innerName.substring(0, idx);
@@ -104,11 +111,11 @@ public class NestsMapper {
 			if (className.endsWith(simpleName)) {
 				// inner name is full name with package stripped
 				// so translate that
-				innerName = prefix + mappedName.substring(mappedName.lastIndexOf('/') + 1);
+				innerName = prefix + mappedClassName.substring(mappedClassName.lastIndexOf('/') + 1);
 			}
 		} else {
 			// anonymous class
-			String simpleName = mappedName.substring(mappedName.lastIndexOf('/') + 1);
+			String simpleName = mappedClassName.substring(mappedClassName.lastIndexOf('/') + 1);
 
 			if (simpleName.startsWith("C_")) {
 				// mapped name is Calamus intermediary format C_<number>
