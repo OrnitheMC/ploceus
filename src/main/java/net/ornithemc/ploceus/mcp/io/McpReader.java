@@ -21,8 +21,6 @@ import net.fabricmc.mappingio.tree.MappingTree.ElementMapping;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-import net.ornithemc.ploceus.mcp.McpFiles;
-
 public class McpReader {
 
 	public static void read(McpFiles files, MappingVisitor visitor) throws IOException {

@@ -7,6 +7,8 @@ import net.fabricmc.loom.api.mappings.layered.MappingLayer;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.mappingio.MappingVisitor;
 
+import net.ornithemc.ploceus.mcp.io.McpFiles;
+import net.ornithemc.ploceus.mcp.io.McpModernFiles;
 import net.ornithemc.ploceus.mcp.io.McpReader;
 
 public record McpModernMappingsLayer(Path intermediaryFile, Path srgFile, Path mcpFile) implements MappingLayer {
@@ -18,6 +20,8 @@ public record McpModernMappingsLayer(Path intermediaryFile, Path srgFile, Path m
 
 	@Override
 	public void visit(MappingVisitor visitor) throws IOException {
-		McpReader.read(new McpModernFiles(intermediaryFile, srgFile, mcpFile), visitor);
+		try (McpFiles files = new McpModernFiles(intermediaryFile, srgFile, mcpFile)) {
+			McpReader.read(files, visitor);
+		}
 	}
 }
