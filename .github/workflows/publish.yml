@@ -8,8 +8,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/wrapper-validation-action@v3
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v6
 
       # Generate the build number based on tags to allow per branch build numbers, not something github provides by default.
       - name: Generate build number
