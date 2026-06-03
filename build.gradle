@@ -16,7 +16,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 def ENV = System.getenv()
-def baseVersion = '1.16'
+def baseVersion = '1.17'
 
 group 'net.ornithemc'
 base {
@@ -45,12 +45,12 @@ dependencies {
 
 	compileOnly("net.fabricmc:fabric-loom:" + baseVersion + "-SNAPSHOT")
 
-	compileOnly("com.google.code.gson:gson:2.10.1")
-	compileOnly("org.ow2.asm:asm:9.9")
-	compileOnly("org.ow2.asm:asm-analysis:9.9")
-	compileOnly("org.ow2.asm:asm-commons:9.9")
-	compileOnly("org.ow2.asm:asm-tree:9.9")
-	compileOnly("org.ow2.asm:asm-util:9.9")
+	compileOnly("com.google.code.gson:gson:2.14.0")
+	compileOnly("org.ow2.asm:asm:9.9.1")
+	compileOnly("org.ow2.asm:asm-analysis:9.9.1")
+	compileOnly("org.ow2.asm:asm-commons:9.9.1")
+	compileOnly("org.ow2.asm:asm-tree:9.9.1")
+	compileOnly("org.ow2.asm:asm-util:9.9.1")
 	compileOnly("net.fabricmc:mapping-io:0.8.0")
 
 	implementation("net.ornithemc:mapping-utils:0.19.2")
