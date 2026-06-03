@@ -68,6 +68,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	private final Property<GameSide> side; // gen 1
 	private final Property<Integer> intermediaryGeneration; // gen 2+
 
+	private boolean hasNestedMappingsDependency;
+
 	public PloceusGradleExtension(Project project) {
 		this.project = project;
 		this.loom = LoomGradleExtension.get(this.project);
@@ -76,7 +78,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		this.exceptionsProvider = project.getObjects().property(ExceptionsProvider.class);
 		this.exceptionsProvider.convention(project.provider(() -> {
 			ExceptionsProvider provider;
-			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
+			if (minecraftVersionDetails().isSplitMappings()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new ExceptionsProvider.Legacy(project, loom, this, getSide().get());
 				} else {
@@ -85,14 +87,14 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			} else {
 				provider = new ExceptionsProvider.Simple(project, loom, this);
 			}
-			provider.provide();
+			provider.resolve();
 
 			return provider;
 		}));
 		this.signaturesProvider = project.getObjects().property(SignaturesProvider.class);
 		this.signaturesProvider.convention(project.provider(() -> {
 			SignaturesProvider provider;
-			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
+			if (minecraftVersionDetails().isSplitMappings()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new SignaturesProvider.Legacy(project, loom, this, getSide().get());
 				} else {
@@ -101,14 +103,14 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			} else {
 				provider = new SignaturesProvider.Simple(project, loom, this);
 			}
-			provider.provide();
+			provider.resolve();
 
 			return provider;
 		}));
 		this.nestsProvider = project.getObjects().property(NestsProvider.class);
 		this.nestsProvider.convention(project.provider(() -> {
 			NestsProvider provider;
-			if (loom.getMinecraftProvider().isLegacySplitOfficialNamespaceVersion()) {
+			if (minecraftVersionDetails().isSplitMappings()) {
 				if (getIntermediaryGeneration().get() == 1) {
 					provider = new NestsProvider.Legacy(project, loom, this, getSide().get());
 				} else {
@@ -117,7 +119,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			} else {
 				provider = new NestsProvider.Simple(project, loom, this);
 			}
-			provider.provide();
+			provider.resolve();
 
 			return provider;
 		}));
@@ -281,9 +283,11 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action) {
+		hasNestedMappingsDependency = true;
+
 		return loom.layered(builder -> {
 			action.execute(builder);
-			builder.addLayer(new NestsMappingSpec(this));
+			builder.addLayer(new NestsMappingSpec(this.getNestsProvider()));
 		});
 	}
 
@@ -329,6 +333,12 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	@Override
 	public Dependency nests(String build, GameSide side) {
+		// the nested mappings layer depends on the nests dependency
+		// and so must be declared AFTER the nests dependencies!
+		if (hasNestedMappingsDependency) {
+			throw new IllegalStateException("Nests dependencies must be declared before the mappings dependency!");
+		}
+
 		return project.getDependencies().create(Constants.nests(minecraftVersion(), side, build));
 	}
 

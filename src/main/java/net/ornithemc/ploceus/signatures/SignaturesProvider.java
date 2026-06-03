@@ -1,6 +1,5 @@
 package net.ornithemc.ploceus.signatures;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -9,17 +8,17 @@ import java.nio.file.StandardCopyOption;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.DependencySet;
 
 import io.github.gaming32.signaturechanger.tree.SigsFile;
 import io.github.gaming32.signaturechanger.visitor.SigsReader;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.mappingio.tree.MappingTree;
@@ -34,14 +33,19 @@ public class SignaturesProvider {
 	final Project project;
 	final LoomGradleExtension loom;
 	final PloceusGradleExtension ploceus;
-	final String configuration;
+	final Configuration configuration;
 	final MappingsNamespace sourceNamespace;
 
-	Path sigsPath;
+	Dependency dependency;
+	Path file;
 	SigsFile sigs;
 	Map<MappingsNamespace, SigsFile> mappedSigs;
 
 	private SignaturesProvider(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus, String configuration, MappingsNamespace sourceNamespace) {
+		this(project, loom, ploceus, configuration == null ? null : project.getConfigurations().getByName(configuration), sourceNamespace);
+	}
+
+	private SignaturesProvider(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus, Configuration configuration, MappingsNamespace sourceNamespace) {
 		this.project = project;
 		this.loom = loom;
 		this.ploceus = ploceus;
@@ -53,49 +57,58 @@ public class SignaturesProvider {
 
 	@Override
 	public int hashCode() {
-		return isPresent() ? sigsPath.hashCode() : 0;
+		return isPresent() ? dependency.hashCode() : 0;
+	}
+
+	public void resolve() {
+		if (configuration == null) {
+			return;
+		}
+
+		DependencySet deps = configuration.getDependencies();
+
+		if (deps.isEmpty()) {
+			return;
+		}
+		if (deps.size() != 1) {
+			throw new IllegalStateException(String.format("Configuration '%s' must only have 1 dependency", configuration.getName()));
+		}
+
+		dependency = deps.iterator().next();
 	}
 
 	public void provide() {
-		Configuration conf = project.getConfigurations().getByName(configuration);
+		if (dependency != null && file == null) {
+			Path jar = configuration.getSingleFile().toPath();
 
-		if (conf.getDependencies().isEmpty()) {
-			return;
-		}
+			MinecraftProvider minecraft = loom.getMinecraftProvider();
+			String fileName = dependency.getName() + "-" + dependency.getVersion() + ".sigs";
+			Path dir = minecraft.path("signatures");
+			Path path = dir.resolve(fileName);
 
-		DependencyInfo dependency = DependencyInfo.create(project, configuration);
-		String sigsName = dependency.getDependency().getName();
-		String sigsVersion = dependency.getResolvedVersion();
-		Optional<File> sigsJar = dependency.resolveFile();
-
-		if (!sigsJar.isPresent()) {
-			return;
-		}
-
-		MinecraftProvider minecraft = loom.getMinecraftProvider();
-		Path dir = minecraft.path("signatures");
-		Path path = dir.resolve(sigsName + "-" + sigsVersion + ".sigs");
-
-		if (Files.notExists(path) || minecraft.refreshDeps()) {
-			try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(sigsJar.get().toPath())) {
-				Files.createDirectories(dir);
-				Files.copy(delegate.getPath("signatures/mappings.sigs"), path, StandardCopyOption.REPLACE_EXISTING);
-			} catch (IOException e) {
-				throw new RuntimeException("unable to extract signatures!");
+			if (Files.notExists(path) || minecraft.refreshDeps()) {
+				try (FileSystemUtil.Delegate delegate = FileSystemUtil.getJarFileSystem(jar)) {
+					Files.createDirectories(dir);
+					Files.copy(delegate.getPath("signatures/mappings.sigs"), path, StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					throw new RuntimeException("unable to extract signatures!");
+				}
 			}
-		}
 
-		sigsPath = path;
+			file = path;
+		}
 	}
 
 	public boolean isPresent() {
-		return sigsPath != null;
+		return dependency != null;
 	}
 
 	public SigsFile get(MappingTree mappings, MappingsNamespace ns) {
-		if (isPresent()) {
+		provide();
+
+		if (file != null) {
 			if (sigs == null) {
-				try (SigsReader sr = new SigsReader(Files.newBufferedReader(sigsPath))) {
+				try (SigsReader sr = new SigsReader(Files.newBufferedReader(file))) {
 					sr.accept(sigs = new SigsFile());
 				} catch (IOException e) {
 					throw new UncheckedIOException("unable to read signatures", e);
@@ -129,7 +142,7 @@ public class SignaturesProvider {
 		private final SignaturesProvider server;
 
 		public Split(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
-			super(project, loom, ploceus, null, MappingsNamespace.INTERMEDIARY);
+			super(project, loom, ploceus, (Configuration) null, MappingsNamespace.INTERMEDIARY);
 
 			this.client = new SignaturesProvider(project, loom, ploceus, Constants.CLIENT_SIGNATURES_CONFIGURATION, MappingsNamespace.CLIENT_OFFICIAL);
 			this.server = new SignaturesProvider(project, loom, ploceus, Constants.SERVER_SIGNATURES_CONFIGURATION, MappingsNamespace.SERVER_OFFICIAL);
@@ -152,6 +165,12 @@ public class SignaturesProvider {
 		}
 
 		@Override
+		public void resolve() {
+			client.resolve();
+			server.resolve();
+		}
+
+		@Override
 		public void provide() {
 			client.provide();
 			server.provide();
@@ -164,7 +183,9 @@ public class SignaturesProvider {
 
 		@Override
 		public SigsFile get(MappingTree mappings, MappingsNamespace ns) {
-			if (isPresent()) {
+			provide();
+
+			if (client.isPresent() || server.isPresent()) {
 				if (sigs == null) {
 					if (client.isPresent() && server.isPresent()) {
 						SigsFile clientSigs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
