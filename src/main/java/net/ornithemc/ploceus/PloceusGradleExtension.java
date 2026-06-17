@@ -464,7 +464,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		int oldGeneration = this.intermediaryGeneration.get();
 		this.intermediaryGeneration.set(generation);
 
-		switchedIntermediaryGen(oldGeneration, generation);
+		if (oldGeneration != generation) {
+			switchedIntermediaryGen(oldGeneration, generation);
+		}
 	}
 
 	private void switchedIntermediaryGen(int from, int to) {
