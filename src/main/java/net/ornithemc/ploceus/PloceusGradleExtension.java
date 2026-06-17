@@ -144,7 +144,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			return GameSide.MERGED;
 		}));
 		this.intermediaryGeneration = project.getObjects().property(int.class);
-		this.intermediaryGeneration.convention(DEFAULT_INTERMEDIARY_GEN);
+		this.intermediaryGeneration.convention(0); // we set the default in apply()
 
 		apply();
 	}
