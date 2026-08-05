@@ -58,8 +58,7 @@ public class NestsMapper {
 	}
 
 	private String mapMethodDesc(String className, String name, String desc) {
-		MethodMapping m = mappings.getMethod(className, name, desc, fromNs);
-		return (m == null) ? name : m.getDesc(toNs);
+		return mappings.mapDesc(desc, fromNs, toNs);
 	}
 
 	private String mapOuterName(String className, String enclClassName) {
