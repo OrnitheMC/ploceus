@@ -142,7 +142,7 @@ public class SignaturesProvider {
 		private final SignaturesProvider server;
 
 		public Split(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
-			super(project, loom, ploceus, (Configuration) null, MappingsNamespace.INTERMEDIARY);
+			super(project, loom, ploceus, (Configuration) null, null);
 
 			this.client = new SignaturesProvider(project, loom, ploceus, Constants.CLIENT_SIGNATURES_CONFIGURATION, MappingsNamespace.CLIENT_OFFICIAL);
 			this.server = new SignaturesProvider(project, loom, ploceus, Constants.SERVER_SIGNATURES_CONFIGURATION, MappingsNamespace.SERVER_OFFICIAL);
@@ -186,27 +186,30 @@ public class SignaturesProvider {
 			provide();
 
 			if (client.isPresent() || server.isPresent()) {
-				if (sigs == null) {
+				if (ns != sourceNamespace && !mappedSigs.containsKey(ns)) {
+					SigsFile sigs = null;
+
 					if (client.isPresent() && server.isPresent()) {
-						SigsFile clientSigs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
-						SigsFile serverSigs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+						SigsFile clientSigs = client.get(mappings, ns);
+						SigsFile serverSigs = server.get(mappings, ns);
 
 						sigs = MappingUtils.mergeSignatures(clientSigs, serverSigs);
 					} else {
 						if (client.isPresent()) {
-							sigs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
+							sigs = client.get(mappings, ns);
 						}
 						if (server.isPresent()) {
-							sigs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+							sigs = server.get(mappings, ns);
 						}
 					}
-				}
-				if (ns != sourceNamespace && !mappedSigs.containsKey(ns)) {
-					mappedSigs.put(ns, new SignaturesMapper(mappings).apply(sigs, sourceNamespace, ns));
+
+					if (sigs != null) {
+						mappedSigs.put(ns, sigs);
+					}
 				}
 			}
 
-			return ns == sourceNamespace ? sigs : mappedSigs.get(ns);
+			return ns == sourceNamespace ? null : mappedSigs.get(ns);
 		}
 	}
 }

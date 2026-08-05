@@ -135,7 +135,7 @@ public class NestsProvider {
 		private final NestsProvider server;
 
 		public Split(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
-			super(project, loom, ploceus, (Configuration) null, MappingsNamespace.INTERMEDIARY);
+			super(project, loom, ploceus, (Configuration) null, null);
 
 			this.client = new NestsProvider(project, loom, ploceus, Constants.CLIENT_NESTS_CONFIGURATION, MappingsNamespace.CLIENT_OFFICIAL);
 			this.server = new NestsProvider(project, loom, ploceus, Constants.SERVER_NESTS_CONFIGURATION, MappingsNamespace.SERVER_OFFICIAL);
@@ -179,27 +179,30 @@ public class NestsProvider {
 			provide();
 
 			if (client.isPresent() || server.isPresent()) {
-				if (nests == null) {
+				if (ns != sourceNamespace && !mappedNests.containsKey(ns)) {
+					Nests nests = null;
+
 					if (client.isPresent() && server.isPresent()) {
-						Nests clientNests = client.get(mappings, MappingsNamespace.INTERMEDIARY);
-						Nests serverNests = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+						Nests clientNests = client.get(mappings, ns);
+						Nests serverNests = server.get(mappings, ns);
 
 						nests = MappingUtils.mergeNests(clientNests, serverNests);
 					} else {
 						if (client.isPresent()) {
-							nests = client.get(mappings, MappingsNamespace.INTERMEDIARY);
+							nests = client.get(mappings, ns);
 						}
 						if (server.isPresent()) {
-							nests = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+							nests = server.get(mappings, ns);
 						}
 					}
-				}
-				if (ns != sourceNamespace && !mappedNests.containsKey(ns)) {
-					mappedNests.put(ns, new NestsMapper(mappings).apply(nests, sourceNamespace, ns));
+
+					if (nests != null) {
+						mappedNests.put(ns, nests);
+					}
 				}
 			}
 
-			return ns == sourceNamespace ? nests : mappedNests.get(ns);
+			return ns == sourceNamespace ? null : mappedNests.get(ns);
 		}
 	}
 }

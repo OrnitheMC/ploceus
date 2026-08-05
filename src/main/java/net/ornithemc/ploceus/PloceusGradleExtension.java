@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.provider.Property;
 
@@ -19,11 +21,16 @@ import com.google.gson.GsonBuilder;
 import com.vdurmont.semver4j.Semver;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingContext;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.configuration.providers.minecraft.LegacyMergedMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.ManifestLocations.ManifestLocation;
+import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.SingleJarMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.library.Library;
 import net.fabricmc.loom.task.AbstractRemapJarTask;
 import net.fabricmc.loom.util.Constants.Configurations;
@@ -38,6 +45,8 @@ import net.ornithemc.ploceus.manifest.VersionDetails;
 import net.ornithemc.ploceus.manifest.VersionsManifest;
 import net.ornithemc.ploceus.mappings.CalamusGen1Provider;
 import net.ornithemc.ploceus.mappings.CalamusGen2Provider;
+import net.ornithemc.ploceus.mappings.FillingMappingSpec;
+import net.ornithemc.ploceus.mappings.MappingFiller;
 import net.ornithemc.ploceus.mcp.McpForgeMappingsSpec;
 import net.ornithemc.ploceus.mcp.McpModernMappingsSpec;
 import net.ornithemc.ploceus.nester.NesterProcessor;
@@ -202,6 +211,27 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		return this.project.getConfigurations().findByName(Configurations.MINECRAFT_COMPILE_LIBRARIES).getFiles().stream().map(File::toPath).toList();
 	}
 
+	public MappingFiller getMappingFiller(MappingContext context) {
+		MappingFiller mappingFiller = new MappingFiller(this);
+
+		MinecraftProvider minecraftProvider = context.minecraftProvider();
+		ConfigurationContainer configurations = project.getConfigurations();
+		Configuration configuration = configurations.getByName(Configurations.MINECRAFT_RUNTIME_LIBRARIES);
+
+		if (minecraftProvider instanceof MergedMinecraftProvider mergedJarProvider) {
+			mappingFiller.jar(minecraftProvider.getOfficialNamespace(), mergedJarProvider.getMergedJar().toFile());
+		} else if (minecraftProvider instanceof LegacyMergedMinecraftProvider legacyMergedJarProvider) {
+			mappingFiller.jar(legacyMergedJarProvider.getClientMinecraftProvider().getOfficialNamespace(), legacyMergedJarProvider.getClientMinecraftProvider().getMinecraftClientJar());
+			mappingFiller.jar(legacyMergedJarProvider.getServerMinecraftProvider().getOfficialNamespace(), legacyMergedJarProvider.getServerMinecraftProvider().getMinecraftServerJar());
+		} else if (minecraftProvider instanceof SingleJarMinecraftProvider singleJarProvider) {
+			mappingFiller.jar(minecraftProvider.getOfficialNamespace(), singleJarProvider.getMinecraftEnvOnlyJar().toFile());
+		}
+
+		mappingFiller.libraries(configuration.getFiles());
+
+		return mappingFiller;
+	}
+
 	public ExceptionsProvider getExceptionsProvider() {
 		return exceptionsProvider.get();
 	}
@@ -212,6 +242,10 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	public NestsProvider getNestsProvider() {
 		return nestsProvider.get();
+	}
+
+	public boolean isProcessorsApplied() {
+		return getExceptionsProvider().isPresent() || getSignaturesProvider().isPresent() || getNestsProvider().isPresent();
 	}
 
 	public boolean shouldUpgradeLibraries() {
@@ -287,6 +321,8 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 		return loom.layered(builder -> {
 			action.execute(builder);
+
+			builder.addLayer(new FillingMappingSpec(this));
 			builder.addLayer(new NestsMappingSpec(this.getNestsProvider()));
 		});
 	}

@@ -141,7 +141,7 @@ public class ExceptionsProvider {
 		private final ExceptionsProvider server;
 
 		public Split(Project project, LoomGradleExtension loom, PloceusGradleExtension ploceus) {
-			super(project, loom, ploceus, (Configuration) null, MappingsNamespace.INTERMEDIARY);
+			super(project, loom, ploceus, (Configuration) null, null);
 
 			this.client = new ExceptionsProvider(project, loom, ploceus, Constants.CLIENT_EXCEPTIONS_CONFIGURATION, MappingsNamespace.CLIENT_OFFICIAL);
 			this.server = new ExceptionsProvider(project, loom, ploceus, Constants.SERVER_EXCEPTIONS_CONFIGURATION, MappingsNamespace.SERVER_OFFICIAL);
@@ -185,27 +185,30 @@ public class ExceptionsProvider {
 			provide();
 
 			if (client.isPresent() || server.isPresent()) {
-				if (excs == null) {
+				if (ns != sourceNamespace && !mappedExcs.containsKey(ns)) {
+					ExceptionsFile excs = null;
+
 					if (client.isPresent() && server.isPresent()) {
-						ExceptionsFile clientExcs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
-						ExceptionsFile serverExcs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+						ExceptionsFile clientExcs = client.get(mappings, ns);
+						ExceptionsFile serverExcs = server.get(mappings, ns);
 
 						excs = MappingUtils.mergeExceptions(clientExcs, serverExcs);
 					} else {
 						if (client.isPresent()) {
-							excs = client.get(mappings, MappingsNamespace.INTERMEDIARY);
+							excs = client.get(mappings, ns);
 						}
 						if (server.isPresent()) {
-							excs = server.get(mappings, MappingsNamespace.INTERMEDIARY);
+							excs = server.get(mappings, ns);
 						}
 					}
-				}
-				if (ns != sourceNamespace && !mappedExcs.containsKey(ns)) {
-					mappedExcs.put(ns, new ExceptionsMapper(mappings).apply(excs, sourceNamespace, ns));
+
+					if (excs != null) {
+						mappedExcs.put(ns, excs);
+					}
 				}
 			}
 
-			return ns == sourceNamespace ? excs : mappedExcs.get(ns);
+			return ns == sourceNamespace ? null : mappedExcs.get(ns);
 		}
 	}
 }
