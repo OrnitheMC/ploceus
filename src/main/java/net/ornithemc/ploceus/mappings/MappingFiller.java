@@ -104,6 +104,7 @@ public class MappingFiller {
 		private final boolean fillAll;
 
 		private int namespace;
+		private boolean named;
 
 		private final Set<String> jarClasses;
 		private final Map<String, Set<String>> superClasses;
@@ -134,6 +135,8 @@ public class MappingFiller {
 				findBridgeMethods();
 				for (String dstNs : dstNss) {
 					this.namespace = this.mappings.getNamespaceId(dstNs);
+					this.named = "named".equals(dstNs);
+
 					propagateMappings();
 				}
 			}
@@ -315,7 +318,7 @@ public class MappingFiller {
 						}
 					}
 
-					if (methodDstName == null && fillAll && bridgeMethods.containsKey(methodName + methodDescriptor)) {
+					if (methodDstName == null && fillAll && named && bridgeMethods.containsKey(methodName + methodDescriptor)) {
 						methodDstName = methodName;
 					}
 
@@ -377,7 +380,7 @@ public class MappingFiller {
 				}
 			}
 
-			if (specializedMethod != null) {
+			if (named && specializedMethod != null) {
 				int i = specializedMethod.indexOf('(');
 				String specializedName = specializedMethod.substring(0, i);
 				String specializedDescriptor = specializedMethod.substring(i);
