@@ -14,9 +14,9 @@ public class PloceusRepositoryPlugin implements Plugin<PluginAware> {
 		if (pluginAware instanceof Settings settings) {
 			declareRepositories(settings.getDependencyResolutionManagement().getRepositories());
 
-			settings.getGradle().getPluginManager().apply(PloceusRepositoryPlugin.class);
+			settings.getGradle().beforeProject(project -> project.getPlugins().apply(LoadedMarker.class));
 		} else if (pluginAware instanceof Project project) {
-			if (project.getGradle().getPlugins().hasPlugin(PloceusRepositoryPlugin.class)) {
+			if (project.getPlugins().hasPlugin(LoadedMarker.class)) {
 				return;
 			}
 
@@ -52,5 +52,11 @@ public class PloceusRepositoryPlugin implements Plugin<PluginAware> {
 				sources.artifact();
 			});
 		});
+	}
+
+	public static class LoadedMarker implements Plugin<Project> {
+		@Override
+		public void apply(Project target) {
+		}
 	}
 }

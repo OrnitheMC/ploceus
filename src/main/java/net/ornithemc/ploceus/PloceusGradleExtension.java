@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -572,7 +573,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		try {
 			// always try to download - the manifest may have changed...
 			try {
-				loom.download(manifestUrl).downloadPath(manifestCache);
+				loom.download(manifestUrl).maxAge(Duration.ofHours(1)).downloadPath(manifestCache);
 			} catch (DownloadException e) {
 				if (!Files.exists(manifestCache)) {
 					throw new RuntimeException("could not download versions manifest, and no cache exists!", e);
