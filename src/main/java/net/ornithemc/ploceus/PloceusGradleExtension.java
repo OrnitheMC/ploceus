@@ -261,11 +261,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 	@Override
 	public Dependency featherMappings(String build) {
 		return layeredMappings(builder -> {
-			builder.mappings(FileSpec.create(
-				intermediaryGeneration.get() == 1
-					? Constants.featherGen1Mappings(minecraftVersion(), side.get(), build)
-					: Constants.featherGen2Mappings(intermediaryGeneration.get(), minecraftVersion(), build)
-			), spec -> {
+			builder.mappings(featherMappingsSpec(build), spec -> {
 				if (intermediaryGeneration.get() > 1) {
 					spec.containsUnpick();
 				}
@@ -325,6 +321,15 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			builder.addLayer(new FillingMappingSpec(this));
 			builder.addLayer(new NestsMappingSpec(this.getNestsProvider()));
 		});
+	}
+
+	@Override
+	public FileSpec featherMappingsSpec(String build) {
+		return FileSpec.create(
+			intermediaryGeneration.get() == 1
+				? Constants.featherGen1Mappings(minecraftVersion(), side.get(), build)
+				: Constants.featherGen2Mappings(intermediaryGeneration.get(), minecraftVersion(), build)
+		);
 	}
 
 	@Override
