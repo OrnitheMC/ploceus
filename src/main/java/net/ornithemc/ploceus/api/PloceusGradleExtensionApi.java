@@ -3,6 +3,7 @@ package net.ornithemc.ploceus.api;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.Dependency;
 
+import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 
 public interface PloceusGradleExtensionApi {
@@ -20,6 +21,8 @@ public interface PloceusGradleExtensionApi {
 	Dependency mappings(Object file);
 
 	Dependency layeredMappings(Action<LayeredMappingSpecBuilder> action);
+
+	FileSpec featherMappingsSpec(String build);
 
 	Dependency raven(String build);
 
