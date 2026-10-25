@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -61,6 +62,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private static final Gson GSON = new GsonBuilder().create();
 	private static final int DEFAULT_INTERMEDIARY_GEN = 2;
+	private static final Map<String, Object> WRITE_LOCKS = new ConcurrentHashMap<>();
 
 	public static PloceusGradleExtension get(Project project) {
 		return (PloceusGradleExtension)project.getExtensions().getByName("ploceus");
@@ -578,7 +580,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		try {
 			// always try to download - the manifest may have changed...
 			try {
-				loom.download(manifestUrl).maxAge(Duration.ofHours(1)).downloadPath(manifestCache);
+				synchronized (getLock(manifestUrl)) {
+					loom.download(manifestUrl).maxAge(Duration.ofHours(1)).downloadPath(manifestCache);
+				}
 			} catch (DownloadException e) {
 				if (!Files.exists(manifestCache)) {
 					throw new RuntimeException("could not download versions manifest, and no cache exists!", e);
@@ -593,7 +597,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				String detailsSha1 = version.detailsSha1();
 				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-				loom.download(detailsUrl).sha1(detailsSha1).downloadPath(detailsCache);
+				synchronized (getLock(detailsUrl)) {
+					loom.download(detailsUrl).sha1(detailsSha1).downloadPath(detailsCache);
+				}
 
 				try (BufferedReader _br = Files.newBufferedReader(detailsCache)) {
 					return GSON.fromJson(_br, VersionDetails.class);
@@ -602,5 +608,9 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		} catch (Exception e) {
 			throw new RuntimeException("unable to read version details", e);
 		}
+	}
+
+	private static Object getLock(String url) {
+		return WRITE_LOCKS.computeIfAbsent(url, _ -> new Object());
 	}
 }
