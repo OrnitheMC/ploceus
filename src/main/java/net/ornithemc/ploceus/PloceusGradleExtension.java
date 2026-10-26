@@ -2,6 +2,7 @@ package net.ornithemc.ploceus;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.gson.JsonParseException;
 import net.fabricmc.loom.util.download.DownloadBuilder;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -63,7 +65,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private static final Gson GSON = new GsonBuilder().create();
 	private static final int DEFAULT_INTERMEDIARY_GEN = 2;
-	private static final Map<String, Object> WRITE_LOCKS = new ConcurrentHashMap<>();
+	private static final Map<Path, Object> WRITE_LOCKS = new ConcurrentHashMap<>();
 
 	public static PloceusGradleExtension get(Project project) {
 		return (PloceusGradleExtension)project.getExtensions().getByName("ploceus");
@@ -578,48 +580,49 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 		Path userCache = loom.getFiles().getUserCache().toPath();
 		Path manifestCache = userCache.resolve(Constants.versionsManifestName(intermediaryGeneration.get()) + "_versions_manifest.json");
 
-		try {
-			// always try to download - the manifest may have changed...
-			try {
-				synchronized (getLock(manifestUrl)) {
-					applyRefreshDeps(loom.download(manifestUrl).maxAge(Duration.ofDays(1))).downloadPath(manifestCache);
-				}
-			} catch (DownloadException e) {
-				if (!Files.exists(manifestCache)) {
-					throw new RuntimeException("could not download versions manifest, and no cache exists!", e);
-				}
-			}
+		VersionsManifest manifest = this.downloadJson(
+				"versions manifest",
+				VersionsManifest.class,
+				loom.download(manifestUrl).maxAge(Duration.ofDays(1)),
+				manifestCache
+		);
+		VersionsManifest.Version version = manifest.getVersion(versionId);
 
-			try (BufferedReader br = Files.newBufferedReader(manifestCache)) {
-				VersionsManifest manifest = GSON.fromJson(br, VersionsManifest.class);
-				VersionsManifest.Version version = manifest.getVersion(versionId);
+		String detailsUrl = version.details();
+		String detailsSha1 = version.detailsSha1();
+		Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
-				String detailsUrl = version.details();
-				String detailsSha1 = version.detailsSha1();
-				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
-
-				synchronized (getLock(detailsUrl)) {
-					applyRefreshDeps(loom.download(detailsUrl).sha1(detailsSha1)).downloadPath(detailsCache);
-				}
-
-				try (BufferedReader _br = Files.newBufferedReader(detailsCache)) {
-					return GSON.fromJson(_br, VersionDetails.class);
-				}
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("unable to read version details", e);
-		}
+		return this.downloadJson(
+				"version details",
+				VersionDetails.class,
+				loom.download(detailsUrl).sha1(detailsSha1),
+				detailsCache
+		);
 	}
 
-	private static Object getLock(String url) {
-		return WRITE_LOCKS.computeIfAbsent(url, _ -> new Object());
-	}
-
-	private DownloadBuilder applyRefreshDeps(DownloadBuilder builder) {
+	private <T> T downloadJson(String name, Class<T> type, DownloadBuilder downloader, Path to) {
 		if (this.project.getGradle().getStartParameter().isRefreshDependencies()) {
-			builder = builder.forceDownload();
+			downloader = downloader.forceDownload();
 		}
 
-		return builder;
+		synchronized (getLock(to)) {
+			try {
+				downloader.downloadPath(to);
+			} catch (DownloadException e) {
+				if (!Files.exists(to)) {
+					throw new RuntimeException(String.format("could not download %s, and no cache exists!", name), e);
+				}
+			}
+
+			try (BufferedReader br = Files.newBufferedReader(to)) {
+				return GSON.fromJson(br, type);
+			} catch (IOException | JsonParseException e) {
+				throw new RuntimeException(String.format("unable to read %s", name), e);
+			}
+		}
+	}
+
+	private static Object getLock(Path path) {
+		return WRITE_LOCKS.computeIfAbsent(path.toAbsolutePath(), _ -> new Object());
 	}
 }
