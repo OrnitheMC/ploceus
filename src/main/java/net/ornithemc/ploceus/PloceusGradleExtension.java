@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.fabricmc.loom.util.download.DownloadBuilder;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -581,7 +582,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			// always try to download - the manifest may have changed...
 			try {
 				synchronized (getLock(manifestUrl)) {
-					loom.download(manifestUrl).maxAge(Duration.ofDays(1)).downloadPath(manifestCache);
+					applyRefreshDeps(loom.download(manifestUrl).maxAge(Duration.ofDays(1))).downloadPath(manifestCache);
 				}
 			} catch (DownloadException e) {
 				if (!Files.exists(manifestCache)) {
@@ -598,7 +599,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 				Path detailsCache = userCache.resolve(versionId).resolve("minecraft-details.json");
 
 				synchronized (getLock(detailsUrl)) {
-					loom.download(detailsUrl).sha1(detailsSha1).downloadPath(detailsCache);
+					applyRefreshDeps(loom.download(detailsUrl).sha1(detailsSha1)).downloadPath(detailsCache);
 				}
 
 				try (BufferedReader _br = Files.newBufferedReader(detailsCache)) {
@@ -612,5 +613,13 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 
 	private static Object getLock(String url) {
 		return WRITE_LOCKS.computeIfAbsent(url, _ -> new Object());
+	}
+
+	private DownloadBuilder applyRefreshDeps(DownloadBuilder builder) {
+		if (this.project.getGradle().getStartParameter().isRefreshDependencies()) {
+			builder = builder.forceDownload();
+		}
+
+		return builder;
 	}
 }
