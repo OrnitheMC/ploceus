@@ -581,7 +581,7 @@ public class PloceusGradleExtension implements PloceusGradleExtensionApi {
 			// always try to download - the manifest may have changed...
 			try {
 				synchronized (getLock(manifestUrl)) {
-					loom.download(manifestUrl).maxAge(Duration.ofHours(1)).downloadPath(manifestCache);
+					loom.download(manifestUrl).maxAge(Duration.ofDays(1)).downloadPath(manifestCache);
 				}
 			} catch (DownloadException e) {
 				if (!Files.exists(manifestCache)) {
