@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import net.fabricmc.loom.LoomGradleExtension;
 
@@ -199,7 +200,7 @@ public class OslVersionCache {
 
 		try (BufferedReader br = Files.newBufferedReader(baseVersionsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException | JsonSyntaxException e) {
 			return null;
 		}
 
@@ -240,7 +241,7 @@ public class OslVersionCache {
 
 		try (BufferedReader br = Files.newBufferedReader(baseVersionsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException | JsonSyntaxException e) {
 			json = new JsonObject();
 		}
 
@@ -377,7 +378,7 @@ public class OslVersionCache {
 
 		try (BufferedReader br = Files.newBufferedReader(versionsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException | JsonSyntaxException e) {
 			return null;
 		}
 
@@ -415,7 +416,7 @@ public class OslVersionCache {
 
 		try (BufferedReader br = Files.newBufferedReader(versionsCache)) {
 			json = GSON.fromJson(br, JsonObject.class);
-		} catch (NoSuchFileException e) {
+		} catch (NoSuchFileException | JsonSyntaxException e) {
 			json = new JsonObject();
 		}
 
