@@ -54,7 +54,7 @@ dependencies {
 	compileOnly("net.fabricmc:mapping-io:0.8.0")
 
 	implementation("net.ornithemc:mapping-utils:0.19.2")
-	implementation("net.ornithemc:condor:1.4.5")
+	implementation("net.ornithemc:condor:1.4.6")
 	implementation("net.ornithemc:exceptor:1.1.0")
 	implementation("net.ornithemc:preen:1.1.0");
 	implementation("net.ornithemc:nester:1.4.0")
